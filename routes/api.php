@@ -25,9 +25,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
     Route::post('adm/logout', [AdmController::class, 'logout']);
 
-    // Eventos
-    Route::get('eventos', [CalendarioController::class, 'eventos'])->name('api.eventos.index');
-    Route::post('eventos', [CalendarioController::class, 'store'])->name('api.eventos.store');
+
+    // Rotas protegidas por Sanctum
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('eventos', [EventoController::class, 'index']);
+        Route::post('eventos', [EventoController::class, 'store']);
+        Route::delete('eventos/{id}', [EventoController::class, 'destroy']);
+    });
 
     // Anotações
     Route::get('anotacoes', [AnotacoesController::class, 'retornarTodos']);
@@ -36,8 +40,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('anotacoes/{id}', [AnotacoesController::class, 'delete']);
 
     // Clientes (somente admin)
-    Route::middleware('admin')->group(function() {
-        Route::get('clientes', [ClienteController::class, 'retornarTodos']); 
+    Route::middleware('admin')->group(function () {
+        Route::get('clientes', [ClienteController::class, 'retornarTodos']);
         Route::put('clientes', [ClienteController::class, 'editar']);
         Route::delete('clientes/{id}', [ClienteController::class, 'delete']);
     });
@@ -51,4 +55,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Eventos separados
     Route::get('eventos-list', [EventoController::class, 'index']);
     Route::post('eventos-list', [EventoController::class, 'store']);
+
+
+    // LISTAGEM
+    Route::middleware(['auth:sanctum', 'admin'])->get('clientes/listar', [ClienteController::class, 'listarClientes']);
 });

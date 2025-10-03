@@ -95,9 +95,9 @@
                         if(response.status) {
                             // Salva token e usuário no localStorage
                             localStorage.setItem('token', response.token);
-                            localStorage.setItem('user', JSON.stringify(response.data));
+                            localStorage.setItem('user', JSON.stringify(response.user));
 
-                            let usuario = response.data;
+                            let usuario = response.user;
                             let mensagem = usuario.tipo === 'admin' 
                                 ? 'Login de administrador realizado!' 
                                 : 'Login realizado com sucesso!';
@@ -121,7 +121,6 @@
                     },
                     error: function(err) {
                         if(err.responseJSON?.errors) {
-                            // Exibe mensagens de validação nos inputs
                             let messages = '';
                             for(const key in err.responseJSON.errors){
                                 messages += `${err.responseJSON.errors[key][0]}<br>`;

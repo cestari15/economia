@@ -103,7 +103,32 @@ class ClienteController extends Controller
         ]);
     }
 
-    
+     public function listarClientes(Request $request)
+    {
+        $user = $request->user();
+
+        // Verifica se é admin
+        if ($user->tipo !== 'admin') {
+            return response()->json([
+                'status' => false,
+                'message' => 'Acesso negado'
+            ], 403);
+        }
+
+        $clientes = Cliente::orderBy('created_at', 'desc')->get();
+
+        if ($clientes->isEmpty()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Nenhum cliente cadastrado.'
+            ]);
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' => $clientes
+        ]);
+    }
 
     public function pesquisar(Request $request)
     {

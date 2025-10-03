@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\LoginRequest;
-use App\Models\Cliente;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
+use App\Models\Cliente;
+use App\Models\Adm;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
@@ -15,7 +15,7 @@ class AuthController extends Controller
      */
     public function register(Request $request)
     {
-        // validação
+        // Validação
         $validator = Validator::make($request->all(), [
             'nome' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:clientes,email',
@@ -30,11 +30,11 @@ class AuthController extends Controller
             ], 422);
         }
 
-        // cria cliente
+        // Cria cliente
         $cliente = Cliente::create([
             'nome' => $request->nome,
             'email' => $request->email,
-            'cpf' => preg_replace('/[^0-9]/', '', $request->cpf), // garante só números
+            'cpf' => preg_replace('/[^0-9]/', '', $request->cpf),
             'password' => Hash::make($request->password),
         ]);
 
@@ -46,13 +46,35 @@ class AuthController extends Controller
     }
 
     /**
-     * Login do cliente
+     * Login unificado (cliente ou admin)
      */
-    public function login(LoginRequest $request)
+    public function login(Request $request)
     {
-        $cliente = Cliente::where('email', $request->email)->first();
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string'
+        ]);
 
-        if (!$cliente || !Hash::check($request->password, $cliente->password)) {
+        $user = null;
+        $tipo = null;
+
+        // Tenta admin
+        $adm = Adm::where('email', $request->email)->first();
+        if ($adm && Hash::check($request->password, $adm->password)) {
+            $user = $adm;
+            $tipo = 'admin';
+        }
+
+        // Tenta cliente se não for admin
+        if (!$user) {
+            $cliente = Cliente::where('email', $request->email)->first();
+            if ($cliente && Hash::check($request->password, $cliente->password)) {
+                $user = $cliente;
+                $tipo = 'cliente';
+            }
+        }
+
+        if (!$user) {
             return response()->json([
                 'status' => false,
                 'message' => 'Email ou senha incorretos.'
@@ -60,18 +82,23 @@ class AuthController extends Controller
         }
 
         // Gera token Sanctum
-        $token = $cliente->createToken('auth_token')->plainTextToken;
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'status' => true,
             'message' => 'Login realizado com sucesso!',
-            'data' => $cliente,
-            'token' => $token
+            'token' => $token,
+            'user' => [
+                'id' => $user->id,
+                'nome' => $user->nome ?? $user->name,
+                'email' => $user->email,
+                'tipo' => $tipo
+            ]
         ]);
     }
 
     /**
-     * Logout do cliente
+     * Logout
      */
     public function logout(Request $request)
     {

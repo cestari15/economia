@@ -6,6 +6,7 @@ use App\Models\Anotacao;
 use Illuminate\Http\Request;
 use App\Http\Requests\AnotacoesFormRequest;
 use App\Models\Anotacaoes;
+use App\Models\Anotacoes;
 
 class AnotacoesController extends Controller
 {
@@ -14,7 +15,7 @@ class AnotacoesController extends Controller
     {
         $user = $request->user(); // Usuário logado via Sanctum
 
-        $anotacoes = Anotacaoes::where('cliente_id', $user->id)->get();
+        $anotacoes = Anotacoes::where('cliente_id', $user->id)->get();
 
         return response()->json([
             'status' => true,
@@ -27,7 +28,7 @@ class AnotacoesController extends Controller
     {
         $user = $request->user(); // Usuário logado
 
-        $anotacao = Anotacaoes::create([
+        $anotacao = Anotacoes::create([
             'nome'       => $request->nome,
             'categoria'  => $request->categoria,
             'valor'      => $request->valor,
@@ -47,7 +48,7 @@ class AnotacoesController extends Controller
     {
         $user = $request->user();
 
-        $anotacao = Anotacaoes::where('id', $request->id)
+        $anotacao = Anotacoes::where('id', $request->id)
             ->where('cliente_id', $user->id)
             ->first();
 
@@ -77,7 +78,7 @@ class AnotacoesController extends Controller
     {
         $user = $request->user();
 
-        $anotacao = Anotacaoes::where('id', $id)
+        $anotacao = Anotacoes::where('id', $id)
             ->where('cliente_id', $user->id)
             ->first();
 

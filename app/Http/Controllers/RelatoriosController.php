@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Anotacao;
+use App\Models\Anotacaoes;
 use Illuminate\Http\Request;
 use App\Models\Anotacoes;
+use App\Models\Cliente;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -13,18 +15,33 @@ class RelatoriosController extends Controller
     // 1. Total geral de todas as anotações
     public function totalGeral()
     {
-        $total = Anotacao::sum('valor');
+        try {
+            // Exemplo: total de clientes
+            $totalClientes = Cliente::count();
 
-        return response()->json([
-            'status' => true,
-            'total_geral' => $total
-        ]);
+            // Se tiver outros modelos, ex:
+            // $totalEventos = Evento::count();
+
+            return response()->json([
+                'status' => true,
+                'data' => [
+                    'total_clientes' => $totalClientes,
+                    // 'total_eventos' => $totalEventos,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            // Retorna erro detalhado sem quebrar a rota
+            return response()->json([
+                'status' => false,
+                'message' => 'Erro ao gerar relatório: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     // 2. Total por categoria
     public function totalPorCategoria()
     {
-        $dados = Anotacao::select('categoria')
+        $dados = Anotacoes::select('categoria')
             ->selectRaw('SUM(valor) as total')
             ->groupBy('categoria')
             ->get();
@@ -38,7 +55,7 @@ class RelatoriosController extends Controller
     // 3. Total por mês/ano
     public function totalPorMes($ano, $mes)
     {
-        $total = Anotacao::whereYear('data', $ano)
+        $total = Anotacoes::whereYear('data', $ano)
             ->whereMonth('data', $mes)
             ->sum('valor');
 
@@ -56,11 +73,11 @@ class RelatoriosController extends Controller
         $ano = $request->input('ano', Carbon::now()->year);
         $mes = $request->input('mes', Carbon::now()->month);
 
-        $totalMes = Anotacao::whereYear('data', $ano)
+        $totalMes = Anotacoes::whereYear('data', $ano)
             ->whereMonth('data', $mes)
             ->sum('valor');
 
-        $porCategoria = Anotacao::whereYear('data', $ano)
+        $porCategoria = Anotacoes::whereYear('data', $ano)
             ->whereMonth('data', $mes)
             ->select('categoria')
             ->selectRaw('SUM(valor) as total')
@@ -77,19 +94,19 @@ class RelatoriosController extends Controller
     }
 
     public function totalPorDiaMes($ano, $mes)
-{
-    $dados = Anotacao::select(DB::raw('DAY(data) as dia'), DB::raw('SUM(valor) as total'))
-        ->whereYear('data', $ano)
-        ->whereMonth('data', $mes)
-        ->groupBy('dia')
-        ->orderBy('dia')
-        ->get();
+    {
+        $dados = Anotacoes::select(DB::raw('DAY(data) as dia'), DB::raw('SUM(valor) as total'))
+            ->whereYear('data', $ano)
+            ->whereMonth('data', $mes)
+            ->groupBy('dia')
+            ->orderBy('dia')
+            ->get();
 
-    return response()->json([
-        'status' => true,
-        'ano' => $ano,
-        'mes' => $mes,
-        'totais_por_dia' => $dados
-    ]);
-}
+        return response()->json([
+            'status' => true,
+            'ano' => $ano,
+            'mes' => $mes,
+            'totais_por_dia' => $dados
+        ]);
+    }
 }

@@ -104,36 +104,43 @@
                 $('#wrapper').toggleClass('toggled');
             });
 
-            const user = JSON.parse(localStorage.getItem('user'));
             const token = localStorage.getItem('token');
-
-            if (user && token) {
-                // Mostrar topbar e nome do usuário
-                $('#topbar-user').show();
-                $('#user-name').text(user.nome || user.name);
-                $('#link-login').hide();
-
-                // Mostrar link listagem de clientes só para admin
-                if (user.tipo === 'admin') {
-                    $('#link-listagem-clientes').show();
-
-                    // SweetAlert de login do admin
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Admin logado!',
-                        text: 'Bem-vindo, ' + (user.nome || user.name)
+            if (token) {
+                // Carrega dados do usuário
+                fetch('{{ url('api/user') }}', {
+                        headers: {
+                            'Authorization': 'Bearer ' + token,
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        $('#user-name').text(data.nome || data.name);
+                    })
+                    .catch(() => {
+                        console.error('Não foi possível carregar os dados do usuário.');
+                        // removido Swal para sidebar
                     });
-                }
 
                 // Logout
-                $('#logout-btn').click(function() {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    window.location.href = '{{ route('login') }}';
+                $('#logout-form').on('submit', function(e) {
+                    e.preventDefault();
+                    fetch('{{ url('logout') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer ' + token,
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        }
+                    }).finally(() => {
+                        localStorage.removeItem('token');
+                        window.location.href = '{{ route('login') }}';
+                    });
                 });
             }
         });
     </script>
+
 
     @yield('scripts')
 </body>

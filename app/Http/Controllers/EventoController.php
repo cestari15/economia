@@ -4,39 +4,66 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Evento;
+use Illuminate\Support\Facades\Validator;
 
 class EventoController extends Controller
 {
-    // Listar todos os eventos
+    // Retorna todos os eventos
     public function index()
     {
         $eventos = Evento::all();
+
         return response()->json([
             'status' => true,
             'data' => $eventos
         ]);
     }
 
-    // Salvar um novo evento
+    // Adiciona novo evento
     public function store(Request $request)
     {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'start' => 'required|date',
-            'reminder_days_before' => 'nullable|integer|min:0'
+        $validator = Validator::make($request->all(), [
+            'titulo' => 'required|string|max:255',
+            'descricao' => 'nullable|string',
+            'data' => 'required|date',
         ]);
 
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => $validator->errors()->first()
+            ], 422);
+        }
+
         $evento = Evento::create([
-            'title' => $request->title,
-            'start' => $request->start,
-            'reminder_days_before' => $request->reminder_days_before ?? 0,
-            'user_id' => $request->user()->id
+            'titulo' => $request->titulo,
+            'descricao' => $request->descricao,
+            'data' => $request->data,
         ]);
 
         return response()->json([
             'status' => true,
-            'message' => 'Evento criado com sucesso!',
-            'data' => $evento
+            'data' => $evento,
+            'message' => 'Evento criado com sucesso!'
+        ], 201);
+    }
+
+    // Remove um evento pelo ID
+    public function destroy($id)
+    {
+        $evento = Evento::find($id);
+        if (!$evento) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Evento não encontrado'
+            ], 404);
+        }
+
+        $evento->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Evento removido com sucesso!'
         ]);
     }
 }
