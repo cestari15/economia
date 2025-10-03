@@ -11,11 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('clientes', function (Blueprint $table) {
+        Schema::create('clientes', function (Blueprint $table) {
             $table->id();
             $table->string('nome', 100)->nullable(false);
             $table->string('cpf', 11)->unique()->nullable(false);
-            $table->string('password',)->nullable(false);
+            $table->string('email')->unique()->nullable(false);
+            $table->string('password')->nullable(false);
             $table->timestamps();
         });
     }

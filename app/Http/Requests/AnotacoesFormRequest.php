@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class AnotacoesFormRequest extends FormRequest
 {
@@ -11,7 +13,7 @@ class AnotacoesFormRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +24,35 @@ class AnotacoesFormRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'nome' => 'required|max:101|min:5',
+            'categoria' => 'required|max:100|min:2',
+            'valor' => 'required|decimal:10,2',
+            'data' => 'required|date',
+
+        ];
+    }
+
+    public function failedValidation(Validator $validator)
+    {
+        throw new HttpResponseException(response()->json([
+            'success' => false,
+            'error' => $validator->errors()
+        ]));
+    }
+
+    public function messages()
+    {
+        return  [
+            'nome.required' => 'O campo nome é obrigatório.',
+            'nome.max' => 'O campo nome não pode ter mais de 100 caracteres.',
+            'nome.min' => 'O campo nome deve ter no mínimo 5 caracteres.',
+            'categoria.required' => 'O campo categoria é obrigatório.',
+            'categoria.max' => 'O campo categoria não pode ter mais de 100 caracteres.',
+            'categoria.min' => 'O campo categoria deve ter no mínimo 2 caracteres.',
+            'data.date' => 'formáto de data inválido',
+            'data.required' => 'data obrigatório',
+            'valor.required' => 'Valor obrigatório',
+            'valor.decimal' => 'Este campo recebe apenas numeros decimais',
         ];
     }
 }

@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Anotacao;
 use Illuminate\Http\Request;
 use App\Models\Anotacoes;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class RelatoriosController extends Controller
@@ -11,7 +13,7 @@ class RelatoriosController extends Controller
     // 1. Total geral de todas as anotações
     public function totalGeral()
     {
-        $total = Anotacoes::sum('valor');
+        $total = Anotacao::sum('valor');
 
         return response()->json([
             'status' => true,
@@ -22,7 +24,7 @@ class RelatoriosController extends Controller
     // 2. Total por categoria
     public function totalPorCategoria()
     {
-        $dados = Anotacoes::select('categoria')
+        $dados = Anotacao::select('categoria')
             ->selectRaw('SUM(valor) as total')
             ->groupBy('categoria')
             ->get();
@@ -36,7 +38,7 @@ class RelatoriosController extends Controller
     // 3. Total por mês/ano
     public function totalPorMes($ano, $mes)
     {
-        $total = Anotacoes::whereYear('data', $ano)
+        $total = Anotacao::whereYear('data', $ano)
             ->whereMonth('data', $mes)
             ->sum('valor');
 
@@ -54,11 +56,11 @@ class RelatoriosController extends Controller
         $ano = $request->input('ano', Carbon::now()->year);
         $mes = $request->input('mes', Carbon::now()->month);
 
-        $totalMes = Anotacoes::whereYear('data', $ano)
+        $totalMes = Anotacao::whereYear('data', $ano)
             ->whereMonth('data', $mes)
             ->sum('valor');
 
-        $porCategoria = Anotacoes::whereYear('data', $ano)
+        $porCategoria = Anotacao::whereYear('data', $ano)
             ->whereMonth('data', $mes)
             ->select('categoria')
             ->selectRaw('SUM(valor) as total')
@@ -73,4 +75,21 @@ class RelatoriosController extends Controller
             'totais_por_categoria' => $porCategoria
         ]);
     }
+
+    public function totalPorDiaMes($ano, $mes)
+{
+    $dados = Anotacao::select(DB::raw('DAY(data) as dia'), DB::raw('SUM(valor) as total'))
+        ->whereYear('data', $ano)
+        ->whereMonth('data', $mes)
+        ->groupBy('dia')
+        ->orderBy('dia')
+        ->get();
+
+    return response()->json([
+        'status' => true,
+        'ano' => $ano,
+        'mes' => $mes,
+        'totais_por_dia' => $dados
+    ]);
+}
 }

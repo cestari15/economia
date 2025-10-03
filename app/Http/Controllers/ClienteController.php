@@ -15,6 +15,7 @@ class ClienteController extends Controller
         $clientes = Cliente::create([
             'nome' => $request->nome,
             'cpf' => $request->cpf,
+            'email' => $request->email,
             'password' => Hash::make($request->password)
         ]);
 
@@ -67,6 +68,10 @@ class ClienteController extends Controller
             $clientes->cpf = $request->cpf;
         }
 
+        if (isset($request->email)) {
+            $clientes->email = $request->email;
+        }
+
 
         if (isset($request->password)) {
             $clientes->password = Hash::make($request->password);
@@ -98,6 +103,7 @@ class ClienteController extends Controller
         ]);
     }
 
+    
 
     public function pesquisar(Request $request)
     {
@@ -106,6 +112,7 @@ class ClienteController extends Controller
 
         $query->where(function ($q) use ($request) {
             $q->where('nome', 'like', '%' . $request->input('pesquisa') . '%')
+             ->orWhere('email', 'like', '%' . $request->input('pesquisa') . '%')
                 ->orWhere('cpf', 'like', '%' . $request->input('pesquisa') . '%');
         });
 
@@ -139,34 +146,33 @@ class ClienteController extends Controller
 
 
     public function recuperarSenha(Request $request)
-{
-    $request->validate([
-        'email' => 'required|email',
-    ]);
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
 
-    $clientes = Cliente::where('email', $request->email)->first();
+        $clientes = Cliente::where('email', $request->email)->first();
 
-    if (!$clientes) {
+        if (!$clientes) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Email inválido'
+            ], 404);
+        }
+
+        // Gerar token de redefinição de senha (ex: UUID ou hash)
+        $token = bin2hex(random_bytes(20));
+
+        // Salvar token na tabela de password resets ou enviar email
+        // Exemplo simples:
+        // PasswordReset::create(['email' => $adm->email, 'token' => $token]);
+
+        // Aqui você enviaria o token por e-mail para o usuário
+        // Mail::to($adm->email)->send(new ResetPasswordMail($token));
+
         return response()->json([
-            'status' => false,
-            'message' => 'Email inválido'
-        ], 404);
+            'status' => true,
+            'message' => 'Instruções para redefinir a senha foram enviadas para seu e-mail.'
+        ]);
     }
-
-    // Gerar token de redefinição de senha (ex: UUID ou hash)
-    $token = bin2hex(random_bytes(20));
-
-    // Salvar token na tabela de password resets ou enviar email
-    // Exemplo simples:
-    // PasswordReset::create(['email' => $adm->email, 'token' => $token]);
-
-    // Aqui você enviaria o token por e-mail para o usuário
-    // Mail::to($adm->email)->send(new ResetPasswordMail($token));
-
-    return response()->json([
-        'status' => true,
-        'message' => 'Instruções para redefinir a senha foram enviadas para seu e-mail.'
-    ]);
-}
-
 }

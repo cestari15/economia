@@ -2,140 +2,97 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\AnotacoesFormRequest;
-use App\Http\Requests\AnotacoesFormRequestUpdate;
-use App\Models\Anotacoes;
+use App\Models\Anotacao;
 use Illuminate\Http\Request;
+use App\Http\Requests\AnotacoesFormRequest;
+use App\Models\Anotacaoes;
 
 class AnotacoesController extends Controller
 {
-    public function store(AnotacoesFormRequest $request)
+    // Retorna todas as anotações do usuário logado
+    public function retornarTodos(Request $request)
     {
-        $anotacoes = Anotacoes::create([
-            'nome' => $request->nome,
-            'categoria' => $request->categoria,
-            'valor' => $request->valor,
-            'data' => $request->data,
-        ]);
+        $user = $request->user(); // Usuário logado via Sanctum
+
+        $anotacoes = Anotacaoes::where('cliente_id', $user->id)->get();
 
         return response()->json([
-            "status" => true,
-            "message" => "Anotação cadastrada com sucesso",
-            "data" => $anotacoes
+            'status' => true,
+            'data' => $anotacoes
         ], 200);
     }
 
-    public function delete($id)
+    // Cria uma nova anotação associada ao usuário logado
+    public function store(AnotacoesFormRequest $request)
     {
-        $anotacoes = Anotacoes::find($id);
+        $user = $request->user(); // Usuário logado
 
-        if (!isset($anotacoes)) {
-            return response()->json([
-                'status' => false,
-                'message' => "Anotação não encontrada"
-            ]);
-        }
-
-        $anotacoes->delete();
-        return response()->json([
-            'status' => true,
-            'message' => "Anotação excluida com sucesso"
+        $anotacao = Anotacaoes::create([
+            'nome'       => $request->nome,
+            'categoria'  => $request->categoria,
+            'valor'      => $request->valor,
+            'data'       => $request->data,
+            'cliente_id' => $user->id, // associa a anotação ao cliente
         ]);
-    }
-
-
-
-
-    public function editar(AnotacoesFormRequestUpdate $request)
-    {
-
-        $anotacoes = Anotacoes::find($request->id);
-
-        if (!isset($anotacoes)) {
-            return response()->json([
-                'status' => false,
-                'message' => "anotação não encontrada"
-            ]);
-        }
-
-        if (isset($request->nome)) {
-            $anotacoes->nome = $request->nome;
-        }
-
-        if (isset($request->categoria)) {
-            $anotacoes->categoria = $request->categoria;
-        }
-
-        if (isset($request->valor)) {
-            $anotacoes->valor = $request->valor;
-        }
-
-
-        if (isset($request->data)) {
-            $anotacoes->data = $request->data;
-        }
-
-        $anotacoes->update();
 
         return response()->json([
             'status' => true,
-            'message' => 'anotação atualizado.'
-        ]);
+            'message' => 'Anotação cadastrada com sucesso',
+            'data' => $anotacao
+        ], 200);
     }
 
-
-    public function retornarTodos()
+    // Edita uma anotação do usuário logado
+    public function editar(AnotacoesFormRequest $request)
     {
-        $anotacoes = Anotacoes::all();
+        $user = $request->user();
 
-        if ($anotacoes == null) {
+        $anotacao = Anotacaoes::where('id', $request->id)
+            ->where('cliente_id', $user->id)
+            ->first();
+
+        if (!$anotacao) {
             return response()->json([
                 'status' => false,
-                'message' => 'Nenhuma Anotação cadastrada'
-            ]);
+                'message' => 'Anotação não encontrada.'
+            ], 404);
         }
+
+        $anotacao->update([
+            'nome'      => $request->nome,
+            'categoria' => $request->categoria,
+            'valor'     => $request->valor,
+            'data'      => $request->data,
+        ]);
+
         return response()->json([
             'status' => true,
-            'data' => $anotacoes
-        ]);
+            'message' => 'Anotação atualizada com sucesso',
+            'data' => $anotacao
+        ], 200);
     }
 
-
-    public function pesquisar(Request $request)
+    // Deleta uma anotação do usuário logado
+    public function delete(Request $request, $id)
     {
+        $user = $request->user();
 
-        $query = Anotacoes::query();
+        $anotacao = Anotacaoes::where('id', $id)
+            ->where('cliente_id', $user->id)
+            ->first();
 
-        $query->where(function ($q) use ($request) {
-            $q->where('nome', 'like', '%' . $request->input('pesquisa') . '%')
-                ->orWhere('categoria', 'like', '%' . $request->input('pesquisa') . '%');
-        });
-
-        $anotacoes = $query->get();
-        if (count($anotacoes) > 0) {
-            return response()->json([
-                'status' => true,
-                'data' => $anotacoes
-            ]);
-        }
-        return response()->json([
-            'status' => false,
-            'data' => "Nenhum resultado encontrado"
-        ]);
-    }
-
-    public function pesquisarPorId($id)
-    {
-        $anotacoes = Anotacoes::find($id);
-        if ($anotacoes == null) {
+        if (!$anotacao) {
             return response()->json([
                 'status' => false,
-                'message' => "Anotação não encontrada"
-            ]);
+                'message' => 'Anotação não encontrada.'
+            ], 404);
         }
+
+        $anotacao->delete();
+
         return response()->json([
             'status' => true,
-            'data' => $anotacoes
-        ]);
+            'message' => 'Anotação deletada com sucesso'
+        ], 200);
     }
 }
