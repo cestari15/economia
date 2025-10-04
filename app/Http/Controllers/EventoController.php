@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Evento;
-use Illuminate\Support\Facades\Validator;
+use App\Http\Requests\EventoRequest;
+use App\Http\Requests\StoreEventoRequest;
+use Illuminate\Http\Request;
 
 class EventoController extends Controller
 {
-    // Retorna todos os eventos
+    // Retorna todos os eventos do usuário logado
     public function index()
     {
-        $eventos = Evento::all();
-
+        $eventos = Evento::all(); // ou filtrar pelo user_id
         return response()->json([
             'status' => true,
             'data' => $eventos
@@ -20,25 +20,13 @@ class EventoController extends Controller
     }
 
     // Adiciona novo evento
-    public function store(Request $request)
+    public function store(StoreEventoRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'titulo' => 'required|string|max:255',
-            'descricao' => 'nullable|string',
-            'data' => 'required|date',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => false,
-                'message' => $validator->errors()->first()
-            ], 422);
-        }
-
         $evento = Evento::create([
-            'titulo' => $request->titulo,
-            'descricao' => $request->descricao,
-            'data' => $request->data,
+            'title' => $request->title,
+            'start' => $request->start,
+            'reminder_days_before' => $request->reminder_days_before ?? 5,
+            'user_id' => auth()->id(), // garante o vínculo com o usuário logado
         ]);
 
         return response()->json([
@@ -48,7 +36,7 @@ class EventoController extends Controller
         ], 201);
     }
 
-    // Remove um evento pelo ID
+    // Remove evento
     public function destroy($id)
     {
         $evento = Evento::find($id);
