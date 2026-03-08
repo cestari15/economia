@@ -1,0 +1,7 @@
+PERFIL
+1- Atualizar
+2- email tem que ser editavel e cpf tbm
+ANOTAÇÕES
+1- Categoria ja definida
+CALENDARIO
+1-Não ta funcionando cadastro

@@ -14,6 +14,8 @@ class Anotacoes extends Model
     // Campos que podem ser preenchidos em massa
     protected $fillable = [
         'cliente_id',  // relacionamento com o cliente
+        'nome',
+        'valor',
         'titulo',
         'descricao',
         'categoria',   // opcional, se quiser filtrar depois
@@ -23,6 +25,6 @@ class Anotacoes extends Model
     // Definindo o relacionamento com Cliente
     public function cliente()
     {
-        return $this->belongsTo(Cliente::class, 'cliente_id');
+        return $this->belongsTo(Cliente::class);
     }
 }

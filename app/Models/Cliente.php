@@ -25,6 +25,6 @@ class Cliente extends Authenticatable
 
     public function anotacoes()
     {
-        return $this->hasMany(Anotacaoes::class);
+        return $this->hasMany(Anotacoes::class);
     }
 }

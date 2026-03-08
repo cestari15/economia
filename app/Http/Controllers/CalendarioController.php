@@ -3,60 +3,114 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Evento;
+use App\Models\Calendario;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class CalendarioController extends Controller
 {
-    // Retorna a view do calendário
+
     public function index()
     {
-        return view('calendario');
-    }
+        $cliente = Auth::guard('cliente')->user();
 
-    // Retorna todos os eventos do usuário logado em formato FullCalendar
-    public function eventos()
-    {
-        $user = Auth::user();
-        $eventos = Evento::where('user_id', $user->id)->get();
+        if (!$cliente) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Cliente não autenticado'
+            ], 401);
+        }
 
-        // Transformar no formato que o FullCalendar espera
-        $fullcalendarEvents = $eventos->map(function($evento) {
-            return [
-                'id' => $evento->id,
-                'title' => $evento->titulo,
-                'start' => $evento->data,
-                'allDay' => true,
+        $calendarios = Calendario::where('cliente_id', $cliente->id)->get();
+
+        $eventos = [];
+
+        foreach ($calendarios as $calendario) {
+
+            // Evento principal
+            $eventos[] = [
+                'id' => $calendario->id,
+                'title' => $calendario->title,
+                'date' => $calendario->data_evento,
+                'tipo' => 'evento'
             ];
-        });
 
-        return response()->json($fullcalendarEvents);
+            // Lembrete
+            if ($calendario->dias_lembrete > 0) {
+
+                $dataLembrete = Carbon::parse($calendario->data_evento)
+                    ->subDays($calendario->dias_lembrete);
+
+                $eventos[] = [
+                    'id' => 'reminder_'.$calendario->id,
+                    'title' => 'Lembrete: '.$calendario->title,
+                    'date' => $dataLembrete->format('Y-m-d'),
+                    'tipo' => 'lembrete'
+                ];
+            }
+        }
+
+        return response()->json($eventos);
     }
 
-    // Cria um evento para o usuário logado
     public function store(Request $request)
     {
+        $cliente = Auth::guard('cliente')->user();
+
+        if (!$cliente) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Cliente não autenticado'
+            ], 401);
+        }
+
         $request->validate([
-            'titulo' => 'required|string|max:255',
-            'data' => 'required|date',
-            'dias_antes' => 'required|integer|min:0',
-            'email' => 'required|email',
+            'title' => 'required|string|max:255',
+            'data_evento' => 'required|date',
+            'dias_lembrete' => 'nullable|integer'
         ]);
 
-        $user = Auth::user();
-
-        $evento = Evento::create([
-            'user_id' => $user->id,
-            'titulo' => $request->titulo,
-            'data' => $request->data,
-            'reminder_days_before' => $request->dias_antes,
-            'email' => $request->email,
+        $calendario = Calendario::create([
+            'cliente_id' => $cliente->id,
+            'title' => $request->title,
+            'data_evento' => $request->data_evento,
+            'dias_lembrete' => $request->dias_lembrete ?? 0
         ]);
 
         return response()->json([
             'status' => true,
-            'message' => 'Evento criado com sucesso!',
-            'evento' => $evento
+            'message' => 'Evento criado com sucesso',
+            'data' => $calendario
+        ]);
+    }
+
+    public function destroy($id)
+    {
+        $cliente = Auth::guard('cliente')->user();
+
+        if (!$cliente) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Cliente não autenticado'
+            ], 401);
+        }
+
+        $evento = Calendario::where('id', $id)
+            ->where('cliente_id', $cliente->id)
+            ->first();
+
+        if (!$evento) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Evento não encontrado'
+            ], 404);
+        }
+
+        $evento->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Evento removido'
         ]);
     }
 }

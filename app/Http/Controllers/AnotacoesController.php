@@ -2,18 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Anotacao;
+use App\Models\Anotacoes;
 use Illuminate\Http\Request;
 use App\Http\Requests\AnotacoesFormRequest;
-use App\Models\Anotacaoes;
-use App\Models\Anotacoes;
 
 class AnotacoesController extends Controller
 {
     // Retorna todas as anotações do usuário logado
     public function retornarTodos(Request $request)
     {
-        $user = $request->user(); // Usuário logado via Sanctum
+
+        $user = $request->user();
 
         $anotacoes = Anotacoes::where('cliente_id', $user->id)->get();
 
@@ -23,27 +22,33 @@ class AnotacoesController extends Controller
         ], 200);
     }
 
-    // Cria uma nova anotação associada ao usuário logado
     public function store(AnotacoesFormRequest $request)
     {
-        $user = $request->user(); // Usuário logado
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Usuário não autenticado.'
+            ], 401);
+        }
 
         $anotacao = Anotacoes::create([
             'nome'       => $request->nome,
             'categoria'  => $request->categoria,
             'valor'      => $request->valor,
             'data'       => $request->data,
-            'cliente_id' => $user->id, // associa a anotação ao cliente
+            'cliente_id' => $user->id, // agora o ID vem do admin ou cliente logado
         ]);
 
         return response()->json([
-            'status' => true,
+            'status'  => true,
             'message' => 'Anotação cadastrada com sucesso',
-            'data' => $anotacao
+            'data'    => $anotacao
         ], 200);
     }
 
-    // Edita uma anotação do usuário logado
+
     public function editar(AnotacoesFormRequest $request)
     {
         $user = $request->user();
@@ -59,12 +64,7 @@ class AnotacoesController extends Controller
             ], 404);
         }
 
-        $anotacao->update([
-            'nome'      => $request->nome,
-            'categoria' => $request->categoria,
-            'valor'     => $request->valor,
-            'data'      => $request->data,
-        ]);
+        $anotacao->update($request->only(['nome', 'categoria', 'valor', 'data']));
 
         return response()->json([
             'status' => true,
@@ -73,7 +73,6 @@ class AnotacoesController extends Controller
         ], 200);
     }
 
-    // Deleta uma anotação do usuário logado
     public function delete(Request $request, $id)
     {
         $user = $request->user();

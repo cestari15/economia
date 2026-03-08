@@ -8,55 +8,82 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 
 class ClienteFormRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
-            'nome' => 'required|max:101|min:5',
-            'email'  => 'required|max:150|email|unique:clientes,email,',
-            'cpf' => 'required|numeric|max:99999999999|min:10000000000|unique:clientes,cpf,',
-            'password' => 'required'
+            'nome' => 'required|string|min:5|max:101',
+
+            'email' => 'required|string|email|max:150|unique:clientes,email',
+
+            // size:11 garante exatamente 11 dígitos
+            'cpf' => [
+                'required',
+                'digits:11',
+                'unique:clientes,cpf',
+                function ($attribute, $value, $fail) {
+                    if (!$this->validarCPF($value)) {
+                        $fail('O CPF informado é inválido.');
+                    }
+                }
+            ],
+
+            // confirmed exige password_confirmation
+            'password' => 'required|string|min:6|confirmed',
         ];
+    }
+
+    protected function validarCPF($cpf)
+    {
+        $cpf = preg_replace('/[^0-9]/', '', $cpf);
+
+        if (strlen($cpf) != 11) return false;
+
+        // Bloqueia CPF repetido
+        if (preg_match('/(\d)\1{10}/', $cpf)) return false;
+
+        // Validação oficial
+        for ($t = 9; $t < 11; $t++) {
+            for ($d = 0, $c = 0; $c < $t; $c++) {
+                $d += $cpf[$c] * (($t + 1) - $c);
+            }
+            $d = ((10 * $d) % 11) % 10;
+            if ($cpf[$c] != $d) return false;
+        }
+
+        return true;
     }
 
     public function failedValidation(Validator $validator)
     {
         throw new HttpResponseException(response()->json([
             'success' => false,
-            'error' => $validator->errors()
-        ]));
+            'errors' => $validator->errors()
+        ], 422));
     }
-
 
     public function messages()
     {
-        return  [
+        return [
             'nome.required' => 'O campo nome é obrigatório.',
-            'nome.max' => 'O campo nome não pode ter mais de 120 caracteres.',
-            'nome.min' => 'O campo nome deve ter no mínimo 5 caracteres.',
-            'email.required' => 'O campo email é obrigatório.',
-            'email.max' => 'O campo email não pode ter mais de 120 caracteres.',
-            'email.email' => 'Por favor, insira um email válido.',
-            'email.unique' => 'Este email já está em uso.',
-            'cpf.required' => 'O campo CPF é obrigatório.',
-            'cpf.numeric' => 'O campo CPF deve conter apenas números.',
-            'cpf.max' => 'O campo CPF deve ter no maximo 11 dígitos.',
-            'cpf.min' => 'O campo CPF deve ter no minimo 11 dígitos.',
-            'cpf.unique' => 'Este CPF já está em uso.',
-            'password.required' => 'O campo senha é obrigatório.',
+            'nome.min' => 'O nome deve ter no mínimo 5 caracteres.',
+            'nome.max' => 'O nome não pode ultrapassar 101 caracteres.',
 
+            'email.required' => 'O campo email é obrigatório.',
+            'email.email' => 'Informe um email válido.',
+            'email.unique' => 'Este email já está cadastrado.',
+
+            'cpf.required' => 'O CPF é obrigatório.',
+            'cpf.digits' => 'O CPF deve conter exatamente 11 dígitos.',
+            'cpf.unique' => 'Este CPF já está cadastrado.',
+
+            'password.required' => 'A senha é obrigatória.',
+            'password.min' => 'A senha deve ter no mínimo 6 caracteres.',
+            'password.confirmed' => 'As senhas não coincidem.',
         ];
     }
 }

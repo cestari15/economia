@@ -47,7 +47,6 @@
 
                 <li><a href="{{ route('profile') }}"><i class="icon-user"></i> <span>Perfil</span></a></li>
                 @if (!session('token'))
-                    <li><a href="{{ route('login') }}"><i class="icon-login"></i> <span>Login</span></a></li>
                 @endif
             </ul>
 

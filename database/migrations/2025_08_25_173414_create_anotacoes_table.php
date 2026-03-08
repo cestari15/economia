@@ -6,24 +6,25 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('anotacoes', function (Blueprint $table) {
             $table->id();
-            $table->string('nome', 100)->nullable(false);
-            $table->string('categoria')->nullable(false);
-            $table->decimal('valor', 10, 2)->nullable(false);
-            $table->date('date')->nullable(false);
+            $table->unsignedBigInteger('cliente_id'); // primeiro criamos a coluna
+            $table->string('nome', 100);
+            $table->string('categoria', 100);
+            $table->decimal('valor', 10, 2);
+            $table->date('data');
             $table->timestamps();
+
+            // depois criamos a foreign key
+            $table->foreign('cliente_id')
+                  ->references('id')
+                  ->on('clientes')
+                  ->onDelete('cascade');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('anotacoes');

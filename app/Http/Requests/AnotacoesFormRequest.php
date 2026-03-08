@@ -26,7 +26,7 @@ class AnotacoesFormRequest extends FormRequest
         return [
             'nome' => 'required|max:101|min:5',
             'categoria' => 'required|max:100|min:2',
-            'valor' => 'required|decimal:10,2',
+            'valor' => ['required', 'numeric'],
             'data' => 'required|date',
 
         ];
@@ -52,7 +52,6 @@ class AnotacoesFormRequest extends FormRequest
             'data.date' => 'formáto de data inválido',
             'data.required' => 'data obrigatório',
             'valor.required' => 'Valor obrigatório',
-            'valor.decimal' => 'Este campo recebe apenas numeros decimais',
         ];
     }
 }
