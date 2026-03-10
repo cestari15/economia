@@ -4,11 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calendário - CRONOS</title>
+    <title>CRONOS - Calendário Inteligente</title>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+
     <style>
         :root {
             --sidebar-bg: #000c17;
@@ -30,14 +32,13 @@
             overflow: hidden;
         }
 
+        /* Sidebar */
         .sidebar {
             width: 260px;
             background: var(--sidebar-bg);
-            height: 100vh;
+            border-right: 1px solid var(--glass-border);
             display: flex;
             flex-direction: column;
-            border-right: 1px solid var(--glass-border);
-            box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
             z-index: 40;
         }
 
@@ -52,9 +53,9 @@
             border-bottom: 1px solid var(--glass-border);
         }
 
-        .sidebar-header span { color: var(--azul-brilhante); }
-
-        .sidebar-menu { flex: 1; padding: 25px 0; }
+        .sidebar-header span {
+            color: var(--azul-brilhante);
+        }
 
         .menu-item {
             padding: 16px 28px;
@@ -63,280 +64,378 @@
             gap: 15px;
             color: #64748b;
             text-decoration: none;
-            transition: all 0.4s ease;
-            font-size: 0.95rem;
+            transition: 0.3s;
             border-left: 4px solid transparent;
         }
 
-        .menu-item:hover, .menu-item.active {
+        .menu-item:hover,
+        .menu-item.active {
             background: linear-gradient(90deg, rgba(37, 99, 235, 0.1) 0%, transparent 100%);
             color: white;
-            border-left: 4px solid var(--azul-brilhante);
+            border-left-color: var(--azul-brilhante);
         }
 
-        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
 
         .topbar {
             height: 90px;
-            position: absolute;
-            top: 0;
-            right: 0;
-            left: 0;
             display: flex;
             align-items: center;
             justify-content: flex-end;
             padding: 0 40px;
             border-bottom: 1px solid var(--glass-border);
-            z-index: 30;
         }
 
         .user-info {
             display: flex;
             align-items: center;
             gap: 12px;
-            background: rgba(255, 255, 255, 0.03);
+            background: var(--glass-bg);
             padding: 8px 18px;
             border-radius: 50px;
             border: 1px solid var(--glass-border);
         }
 
-        #user-display-name {
-            font-size: 1rem;
-            font-weight: 700;
-            background: linear-gradient(to right, #fff, #94a3b8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .user-info i { font-size: 1.6rem; color: var(--azul-brilhante); }
-
+        /* Calendar Card */
         .dashboard-container {
             padding: 40px;
-            margin-top: 90px;
-            max-width: 1300px;
-            margin-left: auto;
-            margin-right: auto;
-            width: 100%;
             flex: 1;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            align-items: center;
         }
 
         .calendar-card {
             background: var(--glass-bg);
-            backdrop-filter: blur(25px);
+            backdrop-filter: blur(20px);
             border: 1px solid var(--glass-border);
             border-radius: 24px;
             padding: 25px;
+            width: 100%;
+            max-width: 1100px;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
         }
 
-        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
 
         .calendar-header h2 {
             margin: 0;
             font-size: 1.6rem;
             font-weight: 800;
-            background: linear-gradient(to right, #fff, #94a3b8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
         }
 
         .btn-nav {
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--glass-bg);
             color: white;
             border: 1px solid var(--glass-border);
-            padding: 8px 16px;
-            border-radius: 10px;
+            padding: 10px 15px;
+            border-radius: 12px;
             cursor: pointer;
-            transition: 0.3s;
+            transition: 0.2s;
         }
 
-        .btn-nav:hover { background: var(--azul-vibrante); border-color: var(--azul-brilhante); }
+        .btn-nav:hover {
+            background: var(--azul-vibrante);
+        }
 
-        .calendar-table { width: 100%; border-collapse: separate; border-spacing: 6px; }
+        /* Grid do Calendário */
+        .calendar-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 6px;
+        }
 
-        .calendar-table th { text-transform: uppercase; font-size: 0.75rem; color: var(--azul-brilhante); padding: 10px; }
+        .calendar-table th {
+            color: var(--azul-brilhante);
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            padding-bottom: 10px;
+        }
 
         .calendar-table td {
             background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
             border-radius: 12px;
-            height: 75px;
+            height: 90px;
+            width: 14.28%;
             vertical-align: top;
             padding: 10px;
+            transition: 0.2s;
             cursor: pointer;
-            transition: all 0.2s;
         }
 
-        .calendar-table td:hover { background: rgba(255, 255, 255, 0.08); border-color: var(--azul-brilhante); }
+        .calendar-table td:hover {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: var(--azul-brilhante);
+        }
 
-        .day-number { font-weight: 800; font-size: 0.9rem; display: block; margin-bottom: 4px; }
+        .day-number {
+            font-weight: 800;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
 
         .event-tag {
             background: var(--roxo-destaque);
-            font-size: 0.6rem;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-top: 4px;
+            font-size: 0.65rem;
+            padding: 3px 6px;
+            border-radius: 5px;
+            margin-top: 5px;
             display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .other-month {
+            opacity: 0.2;
+            pointer-events: none;
         }
     </style>
 </head>
 
 <body>
 
-    <div class="sidebar">
+    <aside class="sidebar">
         <div class="sidebar-header"><i class="fas fa-clock"></i> CRO<span>NOS</span></div>
-        <div class="sidebar-menu">
+        <nav class="sidebar-menu">
             <a href="/relatorios" class="menu-item"><i class="fas fa-chart-pie"></i> Relatórios</a>
             <a href="/calendario" class="menu-item active"><i class="fas fa-calendar-alt"></i> Calendário</a>
             <a href="/anotacoes" class="menu-item"><i class="fas fa-edit"></i> Anotações</a>
-            <a href="/profile" class="menu-item"><i class="fas fa-user"></i> Perfil</a>
-        </div>
-    </div>
+            <a href="/configuracoes" class="menu-item"><i class="fas fa-cog"></i> Configurações</a>
+        </nav>
+    </aside>
 
-    <div class="main-content">
-        <div class="topbar">
+    <main class="main-content">
+        <header class="topbar">
             <div class="user-info">
-                <span id="user-display-name">Usuário</span>
+                <span id="user-display-name">Carregando...</span>
                 <i class="fas fa-user-circle fa-lg"></i>
             </div>
-        </div>
+        </header>
 
-        <div class="dashboard-container">
+        <section class="dashboard-container">
             <div class="calendar-card">
                 <div class="calendar-header">
                     <button class="btn-nav" id="prev-month"><i class="fas fa-chevron-left"></i></button>
-                    <h2 id="mes-ano">Mês / Ano</h2>
+                    <h2 id="mes-ano">--</h2>
                     <button class="btn-nav" id="next-month"><i class="fas fa-chevron-right"></i></button>
                 </div>
 
                 <table class="calendar-table" id="tabela-calendario">
                     <thead>
                         <tr>
-                            <th>Dom</th><th>Seg</th><th>Ter</th><th>Qua</th><th>Qui</th><th>Sex</th><th>Sáb</th>
+                            <th>Dom</th>
+                            <th>Seg</th>
+                            <th>Ter</th>
+                            <th>Qua</th>
+                            <th>Qui</th>
+                            <th>Sex</th>
+                            <th>Sáb</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
                 </table>
             </div>
-        </div>
-    </div>
+        </section>
+    </main>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-      $(document).ready(function() {
-    const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-    let dataHoje = new Date();
-    let mes = dataHoje.getMonth();
-    let ano = dataHoje.getFullYear();
-    let eventos = [];
-    
-    const token = localStorage.getItem('token');
-    const user = JSON.parse(localStorage.getItem('user'));
+        $(document).ready(function() {
+            const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro',
+                'Outubro', 'Novembro', 'Dezembro'
+            ];
+            let dataAtual = new Date();
+            let mesVisivel = dataAtual.getMonth();
+            let anoVisivel = dataAtual.getFullYear();
+            let listaEventos = [];
 
-    if (!token) { window.location.href = '/login'; return; }
-    if (user) $('#user-display-name').text(user.nome);
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
 
-    function carregarEventos() {
-        fetch('/api/calendario', { 
-            headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' } 
-        })
-        .then(res => res.ok ? res.json() : Promise.reject())
-        .then(data => {
-            // Normaliza as datas dos eventos para evitar problemas de fuso horário
-            eventos = data.map(ev => ({
-                title: ev.title,
-                date: new Date(ev.start)
-            }));
-            gerarCalendario(ano, mes);
-        })
-        .catch(() => Swal.fire('Erro', 'Não foi possível carregar os eventos.', 'error'));
-    }
-
-    function gerarCalendario(anoParam, mesParam) {
-        const tabelaBody = $('#tabela-calendario tbody');
-        tabelaBody.empty();
-        
-        const primeiroDia = new Date(anoParam, mesParam, 1).getDay();
-        const totalDias = new Date(anoParam, mesParam + 1, 0).getDate();
-        
-        $('#mes-ano').text(`${meses[mesParam]} ${anoParam}`);
-        
-        let dia = 1;
-        for (let i = 0; i < 6; i++) {
-            let tr = $('<tr></tr>');
-            for (let j = 0; j < 7; j++) {
-                if ((i === 0 && j < primeiroDia) || dia > totalDias) {
-                    tr.append('<td></td>');
-                } else {
-                    let td = $(`<td><span class="day-number">${dia}</span></td>`);
-                    
-                    // Compara data sem considerar horas (usando UTC ou Local consistente)
-                    let eventosDoDia = eventos.filter(ev => 
-                        ev.date.getFullYear() === anoParam && 
-                        ev.date.getMonth() === mesParam && 
-                        ev.date.getDate() === dia
-                    );
-
-                    eventosDoDia.forEach(ev => {
-                        td.append(`<span class="event-tag">${ev.title}</span>`);
+            function carregarDados() {
+                fetch('/api/calendario', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        listaEventos = (Array.isArray(data) ? data : []).map(ev => {
+                            const dataString = ev.start; // O controller envia como 'start'
+                            const [y, m, d] = dataString.split('T')[0].split('-');
+                            return {
+                                id: ev.id, // ID já vem no formato '12_0' do backend
+                                title: ev.title,
+                                date: new Date(y, m - 1, d)
+                            };
+                        });
+                        renderizarCalendario();
                     });
+            }
 
-                    let dataCelula = new Date(anoParam, mesParam, dia);
-                    td.click(() => abrirModalEvento(dataCelula));
-                    tr.append(td);
-                    dia++;
+            function renderizarCalendario() {
+                const corpoTabela = $('#tabela-calendario tbody').empty();
+                $('#mes-ano').text(`${meses[mesVisivel]} ${anoVisivel}`);
+
+                const primeiroDiaSemana = new Date(anoVisivel, mesVisivel, 1).getDay();
+                const totalDiasMes = new Date(anoVisivel, mesVisivel + 1, 0).getDate();
+
+                let diaContador = 1;
+                for (let i = 0; i < 6; i++) {
+                    let linha = $('<tr></tr>');
+                    let preencheuAlgo = false;
+
+                    for (let j = 0; j < 7; j++) {
+                        if ((i === 0 && j < primeiroDiaSemana) || diaContador > totalDiasMes) {
+                            linha.append('<td class="other-month"></td>');
+                        } else {
+                            preencheuAlgo = true;
+                            const diaFixo = diaContador;
+                            const celula = $(`<td><span class="day-number">${diaFixo}</span></td>`);
+
+                            const eventosDoDia = listaEventos.filter(ev =>
+                                ev.date.getFullYear() === anoVisivel &&
+                                ev.date.getMonth() === mesVisivel &&
+                                ev.date.getDate() === diaFixo
+                            );
+
+                            eventosDoDia.forEach(ev => {
+                                const tag = $(`<span class="event-tag">${ev.title}</span>`);
+                                celula.append(tag);
+                            });
+
+                            celula.on('click', () => abrirModal(diaFixo, eventosDoDia));
+
+                            linha.append(celula);
+                            diaContador++;
+                        }
+                    }
+                    if (preencheuAlgo) corpoTabela.append(linha);
                 }
             }
-            if (dia > totalDias && i === 0) { /* evita renderizar linhas vazias desnecessárias */ }
-            tabelaBody.append(tr);
-            if (dia > totalDias) break;
-        }
-    }
 
-    function abrirModalEvento(dataSel) {
-        // Formata data como YYYY-MM-DD
-        const dtStr = dataSel.toLocaleDateString('en-CA'); 
-        
-        Swal.fire({
-            title: 'Novo Evento',
-            background: '#001529',
-            color: '#fff',
-            html: `<input id="n-ev" class="swal2-input" placeholder="Nome do Evento" autofocus>`,
-            confirmButtonText: 'Salvar',
-            confirmButtonColor: '#2563eb',
-            preConfirm: () => {
-                const title = Swal.getPopup().querySelector('#n-ev').value;
-                if (!title) Swal.showValidationMessage('Por favor, insira o nome do evento');
-                return { title: title, start: dtStr };
+            // Tornamos a função global para ser chamada pelo HTML do Swal
+            window.excluirEvento = function(id) {
+                // Remove qualquer sufixo de recorrência (_0, _1...) para enviar apenas o ID real
+                const idLimpo = String(id).split('_')[0];
+
+                fetch(`/api/calendario/${idLimpo}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(res => {
+                        if (!res.ok) throw new Error("Erro");
+                        Swal.close();
+                        carregarDados();
+                    })
+                    .catch(() => Swal.fire('Erro', 'Não foi possível excluir.', 'error'));
+            };
+
+            function abrirModal(dia, eventosDoDia = []) {
+                const dataFormatada =
+                    `${anoVisivel}-${String(mesVisivel + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+
+                let html = `<div style="text-align: left; font-family: sans-serif;">`;
+
+                if (eventosDoDia.length > 0) {
+                    html += `<div style="margin-bottom: 20px;">
+                    <strong style="color: #a0aec0; font-size: 0.9em; text-transform: uppercase;">Eventos neste dia:</strong>
+                    <ul style="list-style: none; padding: 0; margin-top: 10px;">`;
+                    eventosDoDia.forEach(ev => {
+                        // Passamos o ID como string para a função
+                        html += `<li style="margin-bottom: 8px; padding: 10px; background: #0b233a; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #1e3a5a;">
+                <span style="color: #e2e8f0;">${ev.title}</span>
+                <button onclick="excluirEvento('${ev.id}')" style="background: #e53e3e; border:none; color:white; cursor:pointer; padding: 4px 10px; border-radius: 6px; font-size: 0.8em;">Remover</button>
+            </li>`;
+                    });
+                    html += `</ul></div>`;
+                }
+
+                html += `<div style="border-top: 1px solid #1e3a5a; padding-top: 15px;">
+                <input id="swal-input-title" class="swal2-input" placeholder="Novo evento..." style="background: #061626; color: #fff; border: 1px solid #2d3748; border-radius: 6px; width: 90%; margin: 0 0 15px 0;">
+                <div style="display: flex; align-items: center; gap: 8px; color: #cbd5e0; font-size: 0.9em;">
+                    <input type="checkbox" id="swal-input-recorrente" style="cursor: pointer;"> 
+                    <label>Repetir todo mês</label>
+                </div>
+            </div></div>`;
+
+                Swal.fire({
+                    title: `<span style="color: #fff;">Dia ${dia} de ${meses[mesVisivel]}</span>`,
+                    html: html,
+                    background: '#0a1929',
+                    color: '#fff',
+                    confirmButtonColor: '#5a67d8',
+                    cancelButtonColor: '#4a5568',
+                    confirmButtonText: 'Adicionar',
+                    showCancelButton: true,
+                    preConfirm: () => {
+                        const title = document.getElementById('swal-input-title').value;
+                        if (!title) return null;
+                        return {
+                            title,
+                            data_evento: dataFormatada,
+                            recorrente: document.getElementById('swal-input-recorrente').checked ? 1 : 0
+                        };
+                    }
+                }).then(res => {
+                    if (res.isConfirmed && res.value) salvarEvento(res.value);
+                });
             }
-        }).then(result => {
-            if (result.isConfirmed) {
+
+            function salvarEvento(payload) {
                 fetch('/api/calendario', {
                     method: 'POST',
-                    headers: { 
-                        'Authorization': 'Bearer ' + token, 
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json' 
+                        'Accept': 'application/json'
                     },
-                    body: JSON.stringify(result.value)
-                })
-                .then(res => res.ok ? carregarEventos() : Swal.fire('Erro', 'Falha ao salvar evento.', 'error'))
-                .catch(() => Swal.fire('Erro', 'Falha de conexão.', 'error'));
+                    body: JSON.stringify(payload)
+                }).then(() => carregarDados());
             }
-        });
-    }
 
-    $('#prev-month').click(() => { mes--; if (mes < 0) { mes = 11; ano--; } gerarCalendario(ano, mes); });
-    $('#next-month').click(() => { mes++; if (mes > 11) { mes = 0; ano++; } gerarCalendario(ano, mes); });
-    
-    carregarEventos();
-});
+            $('#prev-month').click(() => {
+                mesVisivel--;
+                if (mesVisivel < 0) {
+                    mesVisivel = 11;
+                    anoVisivel--;
+                }
+                renderizarCalendario();
+            });
+            $('#next-month').click(() => {
+                mesVisivel++;
+                if (mesVisivel > 11) {
+                    mesVisivel = 0;
+                    anoVisivel++;
+                }
+                renderizarCalendario();
+            });
+            carregarDados();
+        });
     </script>
+    <script src="{{ asset('js/theme.js') }}"></script>
 </body>
+
 </html>

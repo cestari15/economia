@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('calendarios', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('cliente_id');
+            $table->boolean('recorrente')->default(false); // true = todo mês, false = só este mês
             $table->string('title');
             $table->date('data_evento');
             $table->integer('dias_lembrete')->default(0);

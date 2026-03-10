@@ -44,6 +44,16 @@ class ClienteController extends Controller
         ]);
     }
 
+    public function getDadosConta()
+    {
+        $user = auth()->user(); // Pega o usuário logado
+
+        return response()->json([
+            'criado_em' => $user->created_at->format('d/m/Y'),
+            'ultimo_login' => $user->last_login ? $user->last_login->diffForHumans() : 'Hoje',
+            'plano' => $user->plano // Ex: 'PREMIUM' ou 'FREE'
+        ]);
+    }
 
 
 
@@ -103,7 +113,7 @@ class ClienteController extends Controller
         ]);
     }
 
-     public function listarClientes(Request $request)
+    public function listarClientes(Request $request)
     {
         $user = $request->user();
 
@@ -137,7 +147,7 @@ class ClienteController extends Controller
 
         $query->where(function ($q) use ($request) {
             $q->where('nome', 'like', '%' . $request->input('pesquisa') . '%')
-             ->orWhere('email', 'like', '%' . $request->input('pesquisa') . '%')
+                ->orWhere('email', 'like', '%' . $request->input('pesquisa') . '%')
                 ->orWhere('cpf', 'like', '%' . $request->input('pesquisa') . '%');
         });
 
@@ -199,5 +209,54 @@ class ClienteController extends Controller
             'status' => true,
             'message' => 'Instruções para redefinir a senha foram enviadas para seu e-mail.'
         ]);
+    }
+
+
+    // MÉTODO PARA ATUALIZAR O PERFIL (Nome e E-mail)
+    public function updatePerfil(Request $request)
+    {
+        $user = auth()->user(); // Pega o usuário logado via Token (Sanctum)
+
+        $request->validate([
+            'nome' => 'required|string|max:255',
+            'email' => 'required|email|unique:clientes,email,' . $user->id,
+        ]);
+
+        $user->update([
+            'nome' => $request->nome,
+            'email' => $request->email,
+        ]);
+
+        return response()->json(['message' => 'Perfil atualizado com sucesso!'], 200);
+    }
+
+    // MÉTODO PARA ALTERAR SENHA
+    public function updateSenha(Request $request)
+    {
+        $user = auth()->user();
+
+        $request->validate([
+            'senha_atual' => 'required',
+            'nova_senha' => 'required|min:6',
+        ]);
+
+        // Verifica se a senha atual está correta
+        if (!Hash::check($request->senha_atual, $user->password)) {
+            return response()->json(['message' => 'Senha atual incorreta.'], 403);
+        }
+
+        $user->update([
+            'password' => Hash::make($request->nova_senha)
+        ]);
+
+        return response()->json(['message' => 'Senha alterada com sucesso!'], 200);
+    }
+
+    // MÉTODO PARA DELETAR A PRÓPRIA CONTA
+    public function destroyMinhaConta(Request $request)
+    {
+        $user = auth()->user();
+        $user->delete();
+        return response()->json(['message' => 'Conta excluída com sucesso.'], 200);
     }
 }

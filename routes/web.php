@@ -13,6 +13,7 @@ Route::view('/registro', 'registro')->name('register');
 Route::view('/profile', 'profile')->name('profile');
 Route::view('/anotacoes', 'anotacoes')->name('anotacoes');
 Route::view('/calendario', 'calendario')->name('calendario');
+Route::view('/configuracoes','configuracoes')->name('configuracoes');
 
 
 // Página da listagem de clientes (somente admin)

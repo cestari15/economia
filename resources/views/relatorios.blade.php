@@ -8,6 +8,7 @@
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
 
     <style>
         :root {
@@ -162,6 +163,41 @@
             background: rgba(255, 255, 255, 0.05);
             color: white;
         }
+
+        /* Estilo base para os selects */
+        select {
+            margin: 15px 0;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.1);
+            /* Um pouco mais visível */
+            color: white;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        select:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--azul-brilhante);
+        }
+
+        /* IMPORTANTE: Estiliza as opções dentro do dropdown */
+        select option {
+            background-color: #001529;
+            /* Fundo sólido para garantir contraste */
+            color: white;
+            padding: 10px;
+        }
+
+        /* Remove estilos inline que podem conflitar */
+        #mes-select,
+        #select-mes {
+            width: 100%;
+            /* Opcional: faz ocupar a largura do card */
+            max-width: 200px;
+        }
     </style>
 </head>
 
@@ -173,7 +209,7 @@
             <a href="/relatorios" class="menu-item active"><i class="fas fa-chart-pie"></i> Relatórios</a>
             <a href="/calendario" class="menu-item"><i class="fas fa-calendar-alt"></i> Calendário</a>
             <a href="/anotacoes" class="menu-item "><i class="fas fa-edit"></i> Anotações</a>
-            <a href="/profile" class="menu-item"><i class="fas fa-user"></i> Perfil</a>
+            <a href="/configuracoes" class="menu-item"><i class="fas fa-user"></i> Configurações</a>
         </div>
     </div>
 
@@ -205,8 +241,7 @@
                         <i class="fas fa-chart-bar"></i> Resumo Mensal
                     </h5>
 
-                    <select id="mes-select"
-                        style="margin: 15px 0; padding: 6px 10px; border-radius: 8px; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.15);">
+                    <select id="mes-select">
                         <option value="1">Janeiro</option>
                         <option value="2">Fevereiro</option>
                         <option value="3">Março</option>
@@ -413,6 +448,7 @@
             });
         });
     </script>
+    <script src="{{ asset('js/theme.js') }}"></script>
 </body>
 
 </html>

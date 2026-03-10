@@ -1,0 +1,26 @@
+:root {
+    /* Cores Padrão (Dark Mode - seu estilo atual) */
+    --bg-body: radial-gradient(circle at top left, #001529 0%, #000c17 100%);
+    --bg-sidebar: #000c17;
+    --text-color: #ffffff;
+    --card-bg: rgba(255, 255, 255, 0.05);
+    --border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.light-theme {
+    /* Cores para o Modo Claro */
+    --bg-body: radial-gradient(circle at top left, #f1f5f9 0%, #e2e8f0 100%);
+    --bg-sidebar: #ffffff;
+    --text-color: #1e293b;
+    --card-bg: rgba(0, 0, 0, 0.03);
+    --border-color: #cbd5e1;
+}
+
+body {
+    background: var(--bg-body);
+    color: var(--text-color);
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+.sidebar { background: var(--bg-sidebar); border-right: 1px solid var(--border-color); }
+.settings-card { background: var(--card-bg); border: 1px solid var(--border-color); }

@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     <style>
         :root {
             --sidebar-bg: #000c17;
@@ -216,7 +217,7 @@
             <a href="/relatorios" class="menu-item"><i class="fas fa-chart-pie"></i> Relatórios</a>
             <a href="/calendario" class="menu-item"><i class="fas fa-calendar-alt"></i> Calendário</a>
             <a href="/anotacoes" class="menu-item active"><i class="fas fa-edit"></i> Anotações</a>
-            <a href="/profile" class="menu-item"><i class="fas fa-user"></i> Perfil</a>
+            <a href="/configuracoes" class="menu-item"><i class="fas fa-user"></i> Configurações</a>
         </div>
     </div>
 
@@ -269,14 +270,23 @@
         $(document).ready(function() {
             const token = localStorage.getItem('token');
             const user = JSON.parse(localStorage.getItem('user'));
+
             if (!token) {
                 window.location.href = '/login';
                 return;
             }
+
             if (user) $('#user-display-name').text(user.nome);
 
             $('#form-anotacao').on('submit', function(e) {
                 e.preventDefault();
+
+                // Referência ao botão para feedback visual
+                const btnSubmit = $(this).find('.btn-submit');
+                const originalText = btnSubmit.text();
+
+                btnSubmit.prop('disabled', true).text('A GUARDAR...');
+
                 const dados = {
                     nome: $('#nome').val(),
                     categoria: $('#categoria').val(),
@@ -290,22 +300,64 @@
                     data: JSON.stringify(dados),
                     contentType: 'application/json',
                     headers: {
-                        'Authorization': 'Bearer ' + token
+                        'Authorization': 'Bearer ' + token,
+                        'Accept': 'application/json'
                     },
                     success: function(response) {
+                        // TRATAMENTO DE ERRO DENTRO DO SUCCESS (Caso o status seja 200 mas com erro no JSON)
+                        if (response.success === false || response.error) {
+                            exibirErro(response);
+                            return;
+                        }
+
+                        // SUCESSO REAL
                         Swal.fire({
                             title: 'Sucesso!',
-                            text: response.message,
+                            text: response.message || 'Anotação gravada com sucesso!',
                             icon: 'success',
                             background: '#001529',
-                            color: '#fff'
+                            color: '#fff',
+                            confirmButtonColor: '#2563eb'
                         });
+
                         $('#form-anotacao')[0].reset();
+                    },
+                    error: function(xhr) {
+                        // TRATAMENTO DE ERRO VIA STATUS HTTP (422, 500, etc)
+                        exibirErro(xhr.responseJSON);
+                    },
+                    complete: function() {
+                        // Reativa o botão
+                        btnSubmit.prop('disabled', false).text(originalText);
                     }
                 });
             });
+
+            // Função centralizada para processar e exibir mensagens de erro
+            function exibirErro(dados) {
+                let mensagem = 'Ocorreu um erro inesperado.';
+
+                if (dados && dados.error) {
+                    // Se o erro vier como um objeto de campos (ex: nome: ["erro"])
+                    const primeiroCampo = Object.keys(dados.error)[0];
+                    mensagem = dados.error[primeiroCampo][0];
+                } else if (dados && dados.message) {
+                    // Se vier uma mensagem direta
+                    mensagem = dados.message;
+                }
+
+                Swal.fire({
+                    title: 'Erro de Validação',
+                    text: mensagem,
+                    icon: 'error',
+                    background: '#001529',
+                    color: '#fff',
+                    confirmButtonColor: '#2563eb'
+                });
+            }
         });
     </script>
+    <script src="{{ asset('js/theme.js') }}"></script>
 </body>
 
 </html>
