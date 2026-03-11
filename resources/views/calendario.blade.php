@@ -213,6 +213,9 @@
             <a href="/relatorios" class="menu-item"><i class="fas fa-chart-pie"></i> Relatórios</a>
             <a href="/calendario" class="menu-item active"><i class="fas fa-calendar-alt"></i> Calendário</a>
             <a href="/anotacoes" class="menu-item"><i class="fas fa-edit"></i> Anotações</a>
+            <a href="/clientes" class="menu-item" id="menu-admin" style="display: none;">
+                <i class="fas fa-users-cog"></i> Clientes
+            </a>
             <a href="/configuracoes" class="menu-item"><i class="fas fa-cog"></i> Configurações</a>
         </nav>
     </aside>
@@ -220,7 +223,7 @@
     <main class="main-content">
         <header class="topbar">
             <div class="user-info">
-                <span id="user-display-name">Carregando...</span>
+                <span id="user-display-name">Usúario</span>
                 <i class="fas fa-user-circle fa-lg"></i>
             </div>
         </header>
@@ -255,186 +258,159 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        $(document).ready(function() {
-            const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro',
-                'Outubro', 'Novembro', 'Dezembro'
-            ];
-            let dataAtual = new Date();
-            let mesVisivel = dataAtual.getMonth();
-            let anoVisivel = dataAtual.getFullYear();
-            let listaEventos = [];
+    $(document).ready(function() {
+        // --- 1. VALIDAÇÃO DE SESSÃO E SEGURANÇA ---
+        const authData = JSON.parse(localStorage.getItem('auth_data'));
+        const now = new Date().getTime();
 
-            const token = localStorage.getItem('token');
-            if (!token) {
-                window.location.href = '/login';
-                return;
+        if (!authData || now > authData.expiry) {
+            localStorage.removeItem('auth_data');
+            window.location.href = '/login';
+            return;
+        }
+
+        const token = authData.token;
+        const user = authData.user;
+
+        if (user && user.nome) {
+            $('#user-display-name').text(user.nome);
+            // Controle do menu admin
+            if (user.tipo === 'admin') {
+                $('#menu-admin').show();
+            } else {
+                $('#menu-admin').remove();
             }
+        }
 
-            function carregarDados() {
-                fetch('/api/calendario', {
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Accept': 'application/json'
-                        }
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        listaEventos = (Array.isArray(data) ? data : []).map(ev => {
-                            const dataString = ev.start; // O controller envia como 'start'
-                            const [y, m, d] = dataString.split('T')[0].split('-');
-                            return {
-                                id: ev.id, // ID já vem no formato '12_0' do backend
-                                title: ev.title,
-                                date: new Date(y, m - 1, d)
-                            };
-                        });
-                        renderizarCalendario();
-                    });
-            }
+        // --- 2. CONFIGURAÇÃO DO CALENDÁRIO ---
+        const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+        let dataAtual = new Date();
+        let mesVisivel = dataAtual.getMonth();
+        let anoVisivel = dataAtual.getFullYear();
+        let listaEventos = [];
 
-            function renderizarCalendario() {
-                const corpoTabela = $('#tabela-calendario tbody').empty();
-                $('#mes-ano').text(`${meses[mesVisivel]} ${anoVisivel}`);
-
-                const primeiroDiaSemana = new Date(anoVisivel, mesVisivel, 1).getDay();
-                const totalDiasMes = new Date(anoVisivel, mesVisivel + 1, 0).getDate();
-
-                let diaContador = 1;
-                for (let i = 0; i < 6; i++) {
-                    let linha = $('<tr></tr>');
-                    let preencheuAlgo = false;
-
-                    for (let j = 0; j < 7; j++) {
-                        if ((i === 0 && j < primeiroDiaSemana) || diaContador > totalDiasMes) {
-                            linha.append('<td class="other-month"></td>');
-                        } else {
-                            preencheuAlgo = true;
-                            const diaFixo = diaContador;
-                            const celula = $(`<td><span class="day-number">${diaFixo}</span></td>`);
-
-                            const eventosDoDia = listaEventos.filter(ev =>
-                                ev.date.getFullYear() === anoVisivel &&
-                                ev.date.getMonth() === mesVisivel &&
-                                ev.date.getDate() === diaFixo
-                            );
-
-                            eventosDoDia.forEach(ev => {
-                                const tag = $(`<span class="event-tag">${ev.title}</span>`);
-                                celula.append(tag);
-                            });
-
-                            celula.on('click', () => abrirModal(diaFixo, eventosDoDia));
-
-                            linha.append(celula);
-                            diaContador++;
-                        }
-                    }
-                    if (preencheuAlgo) corpoTabela.append(linha);
+        function carregarDados() {
+            fetch('/api/calendario', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
                 }
-            }
-
-            // Tornamos a função global para ser chamada pelo HTML do Swal
-            window.excluirEvento = function(id) {
-                // Remove qualquer sufixo de recorrência (_0, _1...) para enviar apenas o ID real
-                const idLimpo = String(id).split('_')[0];
-
-                fetch(`/api/calendario/${idLimpo}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Accept': 'application/json'
-                        }
-                    })
-                    .then(res => {
-                        if (!res.ok) throw new Error("Erro");
-                        Swal.close();
-                        carregarDados();
-                    })
-                    .catch(() => Swal.fire('Erro', 'Não foi possível excluir.', 'error'));
-            };
-
-            function abrirModal(dia, eventosDoDia = []) {
-                const dataFormatada =
-                    `${anoVisivel}-${String(mesVisivel + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
-
-                let html = `<div style="text-align: left; font-family: sans-serif;">`;
-
-                if (eventosDoDia.length > 0) {
-                    html += `<div style="margin-bottom: 20px;">
-                    <strong style="color: #a0aec0; font-size: 0.9em; text-transform: uppercase;">Eventos neste dia:</strong>
-                    <ul style="list-style: none; padding: 0; margin-top: 10px;">`;
-                    eventosDoDia.forEach(ev => {
-                        // Passamos o ID como string para a função
-                        html += `<li style="margin-bottom: 8px; padding: 10px; background: #0b233a; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #1e3a5a;">
-                <span style="color: #e2e8f0;">${ev.title}</span>
-                <button onclick="excluirEvento('${ev.id}')" style="background: #e53e3e; border:none; color:white; cursor:pointer; padding: 4px 10px; border-radius: 6px; font-size: 0.8em;">Remover</button>
-            </li>`;
-                    });
-                    html += `</ul></div>`;
-                }
-
-                html += `<div style="border-top: 1px solid #1e3a5a; padding-top: 15px;">
-                <input id="swal-input-title" class="swal2-input" placeholder="Novo evento..." style="background: #061626; color: #fff; border: 1px solid #2d3748; border-radius: 6px; width: 90%; margin: 0 0 15px 0;">
-                <div style="display: flex; align-items: center; gap: 8px; color: #cbd5e0; font-size: 0.9em;">
-                    <input type="checkbox" id="swal-input-recorrente" style="cursor: pointer;"> 
-                    <label>Repetir todo mês</label>
-                </div>
-            </div></div>`;
-
-                Swal.fire({
-                    title: `<span style="color: #fff;">Dia ${dia} de ${meses[mesVisivel]}</span>`,
-                    html: html,
-                    background: '#0a1929',
-                    color: '#fff',
-                    confirmButtonColor: '#5a67d8',
-                    cancelButtonColor: '#4a5568',
-                    confirmButtonText: 'Adicionar',
-                    showCancelButton: true,
-                    preConfirm: () => {
-                        const title = document.getElementById('swal-input-title').value;
-                        if (!title) return null;
-                        return {
-                            title,
-                            data_evento: dataFormatada,
-                            recorrente: document.getElementById('swal-input-recorrente').checked ? 1 : 0
-                        };
-                    }
-                }).then(res => {
-                    if (res.isConfirmed && res.value) salvarEvento(res.value);
+            })
+            .then(res => res.json())
+            .then(data => {
+                listaEventos = (Array.isArray(data) ? data : []).map(ev => {
+                    const [y, m, d] = ev.start.split('T')[0].split('-');
+                    return {
+                        id: ev.id,
+                        title: ev.title,
+                        date: new Date(y, m - 1, d)
+                    };
                 });
-            }
-
-            function salvarEvento(payload) {
-                fetch('/api/calendario', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                }).then(() => carregarDados());
-            }
-
-            $('#prev-month').click(() => {
-                mesVisivel--;
-                if (mesVisivel < 0) {
-                    mesVisivel = 11;
-                    anoVisivel--;
-                }
                 renderizarCalendario();
             });
-            $('#next-month').click(() => {
-                mesVisivel++;
-                if (mesVisivel > 11) {
-                    mesVisivel = 0;
-                    anoVisivel++;
+        }
+
+        function renderizarCalendario() {
+            const corpoTabela = $('#tabela-calendario tbody').empty();
+            $('#mes-ano').text(`${meses[mesVisivel]} ${anoVisivel}`);
+
+            const primeiroDiaSemana = new Date(anoVisivel, mesVisivel, 1).getDay();
+            const totalDiasMes = new Date(anoVisivel, mesVisivel + 1, 0).getDate();
+
+            let diaContador = 1;
+            for (let i = 0; i < 6; i++) {
+                let linha = $('<tr></tr>');
+                let preencheuAlgo = false;
+
+                for (let j = 0; j < 7; j++) {
+                    if ((i === 0 && j < primeiroDiaSemana) || diaContador > totalDiasMes) {
+                        linha.append('<td class="other-month"></td>');
+                    } else {
+                        preencheuAlgo = true;
+                        const diaFixo = diaContador;
+                        const celula = $(`<td><span class="day-number">${diaFixo}</span></td>`);
+
+                        const eventosDoDia = listaEventos.filter(ev =>
+                            ev.date.getFullYear() === anoVisivel &&
+                            ev.date.getMonth() === mesVisivel &&
+                            ev.date.getDate() === diaFixo
+                        );
+
+                        eventosDoDia.forEach(ev => {
+                            celula.append(`<span class="event-tag">${ev.title}</span>`);
+                        });
+
+                        celula.on('click', () => abrirModal(diaFixo, eventosDoDia));
+                        linha.append(celula);
+                        diaContador++;
+                    }
                 }
-                renderizarCalendario();
-            });
-            carregarDados();
-        });
-    </script>
+                if (preencheuAlgo) corpoTabela.append(linha);
+            }
+        }
+
+        // --- 3. MODAIS E AÇÕES ---
+        window.excluirEvento = function(id) {
+            const idLimpo = String(id).split('_')[0];
+            fetch(`/api/calendario/${idLimpo}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+            })
+            .then(() => { Swal.close(); carregarDados(); })
+            .catch(() => Swal.fire('Erro', 'Não foi possível excluir.', 'error'));
+        };
+
+        function abrirModal(dia, eventosDoDia = []) {
+            const dataFormatada = `${anoVisivel}-${String(mesVisivel + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+            
+            let html = `<div style="text-align: left; font-family: sans-serif;">`;
+            if (eventosDoDia.length > 0) {
+                html += `<div style="margin-bottom: 20px;"><strong style="color: #a0aec0;">Eventos:</strong><ul style="list-style: none; padding: 0;">`;
+                eventosDoDia.forEach(ev => {
+                    html += `<li style="margin-bottom: 8px; padding: 10px; background: #0b233a; border-radius: 8px; display: flex; justify-content: space-between;">
+                        <span>${ev.title}</span>
+                        <button onclick="excluirEvento('${ev.id}')" style="background: #e53e3e; border:none; color:white; cursor:pointer; padding: 4px 10px; border-radius: 6px;">Remover</button>
+                    </li>`;
+                });
+                html += `</ul></div>`;
+            }
+
+            html += `<div style="border-top: 1px solid #1e3a5a; padding-top: 15px;">
+                <label>Título:</label><input id="swal-input-title" class="swal2-input">
+                <label>Dia do Lembrete:</label><input id="swal-input-lembrete" type="number" class="swal2-input">
+                <input type="checkbox" id="swal-input-recorrente"> <label>Repetir todo mês</label>
+            </div>`;
+
+            Swal.fire({
+                title: `Agendar para dia ${dia}`,
+                html: html,
+                background: '#0a1929', color: '#fff', confirmButtonColor: '#5a67d8',
+                preConfirm: () => {
+                    return {
+                        title: document.getElementById('swal-input-title').value,
+                        data_evento: dataFormatada,
+                        dia_lembrete: document.getElementById('swal-input-lembrete').value,
+                        recorrente: document.getElementById('swal-input-recorrente').checked ? 1 : 0
+                    };
+                }
+            }).then(res => { if (res.isConfirmed && res.value.title) salvarEvento(res.value); });
+        }
+
+        function salvarEvento(payload) {
+            fetch('/api/calendario', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(() => carregarDados());
+        }
+
+        // Navegação
+        $('#prev-month').click(() => { mesVisivel--; if (mesVisivel < 0) { mesVisivel = 11; anoVisivel--; } renderizarCalendario(); });
+        $('#next-month').click(() => { mesVisivel++; if (mesVisivel > 11) { mesVisivel = 0; anoVisivel++; } renderizarCalendario(); });
+
+        carregarDados();
+    });
+</script>
     <script src="{{ asset('js/theme.js') }}"></script>
 </body>
 

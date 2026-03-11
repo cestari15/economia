@@ -217,6 +217,9 @@
             <a href="/relatorios" class="menu-item"><i class="fas fa-chart-pie"></i> Relatórios</a>
             <a href="/calendario" class="menu-item"><i class="fas fa-calendar-alt"></i> Calendário</a>
             <a href="/anotacoes" class="menu-item active"><i class="fas fa-edit"></i> Anotações</a>
+            <a href="/clientes" class="menu-item" id="menu-admin" style="display: none;">
+                <i class="fas fa-users-cog"></i> Clientes
+            </a>
             <a href="/configuracoes" class="menu-item"><i class="fas fa-user"></i> Configurações</a>
         </div>
     </div>
@@ -266,97 +269,104 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-        $(document).ready(function() {
-            const token = localStorage.getItem('token');
-            const user = JSON.parse(localStorage.getItem('user'));
+   <script>
+    $(document).ready(function() {
+        // 1. Verificação de sessão (Lógica com expiração)
+        const authData = JSON.parse(localStorage.getItem('auth_data'));
+        const now = new Date().getTime();
 
-            if (!token) {
-                window.location.href = '/login';
-                return;
+        if (!authData || now > authData.expiry) {
+            localStorage.removeItem('auth_data');
+            window.location.href = '/login';
+            return;
+        }
+
+        const token = authData.token;
+        const user = authData.user;
+
+        // 2. Exibição do nome e controle de menu ADMIN
+        if (user) {
+            $('#user-display-name').text(user.nome);
+            
+            if (user.tipo === 'admin') {
+                $('#menu-admin').show();
+            } else {
+                $('#menu-admin').remove();
             }
+        }
 
-            if (user) $('#user-display-name').text(user.nome);
+        // 3. Processamento do formulário de anotação
+        $('#form-anotacao').on('submit', function(e) {
+            e.preventDefault();
 
-            $('#form-anotacao').on('submit', function(e) {
-                e.preventDefault();
+            const btnSubmit = $(this).find('.btn-submit');
+            const originalText = btnSubmit.text();
 
-                // Referência ao botão para feedback visual
-                const btnSubmit = $(this).find('.btn-submit');
-                const originalText = btnSubmit.text();
+            btnSubmit.prop('disabled', true).text('A GUARDAR...');
 
-                btnSubmit.prop('disabled', true).text('A GUARDAR...');
+            const dados = {
+                nome: $('#nome').val(),
+                categoria: $('#categoria').val(),
+                valor: $('#valor').val(),
+                data: $('#data').val()
+            };
 
-                const dados = {
-                    nome: $('#nome').val(),
-                    categoria: $('#categoria').val(),
-                    valor: $('#valor').val(),
-                    data: $('#data').val()
-                };
-
-                $.ajax({
-                    url: '{{ url('api/anotacoes/store') }}',
-                    type: 'POST',
-                    data: JSON.stringify(dados),
-                    contentType: 'application/json',
-                    headers: {
-                        'Authorization': 'Bearer ' + token,
-                        'Accept': 'application/json'
-                    },
-                    success: function(response) {
-                        // TRATAMENTO DE ERRO DENTRO DO SUCCESS (Caso o status seja 200 mas com erro no JSON)
-                        if (response.success === false || response.error) {
-                            exibirErro(response);
-                            return;
-                        }
-
-                        // SUCESSO REAL
-                        Swal.fire({
-                            title: 'Sucesso!',
-                            text: response.message || 'Anotação gravada com sucesso!',
-                            icon: 'success',
-                            background: '#001529',
-                            color: '#fff',
-                            confirmButtonColor: '#2563eb'
-                        });
-
-                        $('#form-anotacao')[0].reset();
-                    },
-                    error: function(xhr) {
-                        // TRATAMENTO DE ERRO VIA STATUS HTTP (422, 500, etc)
-                        exibirErro(xhr.responseJSON);
-                    },
-                    complete: function() {
-                        // Reativa o botão
-                        btnSubmit.prop('disabled', false).text(originalText);
+            $.ajax({
+                url: '{{ url("api/anotacoes/store") }}',
+                type: 'POST',
+                data: JSON.stringify(dados),
+                contentType: 'application/json',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Accept': 'application/json'
+                },
+                success: function(response) {
+                    if (response.success === false || response.error) {
+                        exibirErro(response);
+                        return;
                     }
-                });
-            });
 
-            // Função centralizada para processar e exibir mensagens de erro
-            function exibirErro(dados) {
-                let mensagem = 'Ocorreu um erro inesperado.';
+                    Swal.fire({
+                        title: 'Sucesso!',
+                        text: response.message || 'Anotação gravada com sucesso!',
+                        icon: 'success',
+                        background: '#001529',
+                        color: '#fff',
+                        confirmButtonColor: '#2563eb'
+                    });
 
-                if (dados && dados.error) {
-                    // Se o erro vier como um objeto de campos (ex: nome: ["erro"])
-                    const primeiroCampo = Object.keys(dados.error)[0];
-                    mensagem = dados.error[primeiroCampo][0];
-                } else if (dados && dados.message) {
-                    // Se vier uma mensagem direta
-                    mensagem = dados.message;
+                    $('#form-anotacao')[0].reset();
+                },
+                error: function(xhr) {
+                    exibirErro(xhr.responseJSON);
+                },
+                complete: function() {
+                    btnSubmit.prop('disabled', false).text(originalText);
                 }
-
-                Swal.fire({
-                    title: 'Erro de Validação',
-                    text: mensagem,
-                    icon: 'error',
-                    background: '#001529',
-                    color: '#fff',
-                    confirmButtonColor: '#2563eb'
-                });
-            }
+            });
         });
-    </script>
+
+        // 4. Função centralizada de erro
+        function exibirErro(dados) {
+            let mensagem = 'Ocorreu um erro inesperado.';
+            if (dados && dados.error) {
+                const primeiroCampo = Object.keys(dados.error)[0];
+                mensagem = dados.error[primeiroCampo][0];
+            } else if (dados && dados.message) {
+                mensagem = dados.message;
+            }
+
+            Swal.fire({
+                title: 'Erro',
+                text: mensagem,
+                icon: 'error',
+                background: '#001529',
+                color: '#fff',
+                confirmButtonColor: '#2563eb'
+            });
+        }
+    });
+</script>
     <script src="{{ asset('js/theme.js') }}"></script>
 </body>
 

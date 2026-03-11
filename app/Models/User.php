@@ -24,6 +24,8 @@ class User extends Authenticatable
         'tipo', // adicionado
     ];
 
+    protected $table = 'clientes'; // Isso força o Laravel a olhar para a tabela 'clientes'
+
     /**
      * The attributes that should be hidden for serialization.
      *

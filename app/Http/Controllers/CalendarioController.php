@@ -21,9 +21,6 @@ class CalendarioController extends Controller
 
         foreach ($calendarios as $cal) {
             $dataBase = Carbon::parse($cal->data_evento);
-
-            // Se for recorrente, criamos instâncias para meses futuros
-            // Caso contrário, apenas para o mês original
             $mesesParaGerar = $cal->recorrente ? 12 : 1;
 
             for ($i = 0; $i < $mesesParaGerar; $i++) {
@@ -43,21 +40,28 @@ class CalendarioController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
+
+        // 1. Adicionamos 'dia_lembrete' na validação
         $request->validate([
             'title' => 'required|string',
             'data_evento' => 'required|date',
-            'recorrente' => 'boolean' // Novo campo
+            'recorrente' => 'boolean',
+            'dia_lembrete' => 'nullable|integer|min:0|max:31' // Validação do novo campo
         ]);
 
+        // 2. Adicionamos 'dias_lembrete' no salvamento (conforme sua migration)
         $calendario = Calendario::create([
             'cliente_id'    => $user->id,
             'title'         => $request->title,
             'data_evento'   => $request->data_evento,
-            'recorrente'    => $request->recorrente ?? false
+            'recorrente'    => $request->recorrente ?? false,
+            'dias_lembrete' => $request->dia_lembrete ?? 0 // Salva o dia vindo do JS
         ]);
 
         return response()->json(['status' => true, 'data' => $calendario]);
     }
+
+   
 
     public function destroy($id)
     {

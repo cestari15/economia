@@ -73,8 +73,9 @@ Route::middleware('auth:sanctum')->group(function () {
     | ÁREA DO ADMINISTRADOR (Middleware Extra)
     |--------------------------------------------------------------------------
     */
+    
     Route::middleware('admin')->group(function () {
-        Route::get('clientes', [ClienteController::class, 'retornarTodos']);
+        Route::get('/clientes', [ClienteController::class, 'retornarTodos']);
         Route::get('clientes/listar', [ClienteController::class, 'listarClientes']);
         Route::put('clientes', [ClienteController::class, 'editar']);
         Route::delete('clientes/{id}', [ClienteController::class, 'delete']);

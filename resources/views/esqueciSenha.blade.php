@@ -177,7 +177,7 @@
     <div class="auth-container">
         <div class="auth-card">
             <div class="auth-header">
-                <a href="/" class="logo-text">ECONO<span>MIZZ</span></a>
+                <a href="/" class="logo-text">CRO<span>NOS</span></a>
                 <div class="auth-title">Recuperar Senha</div>
                 <p class="auth-subtitle">
                     Digite seu e-mail abaixo e enviaremos um link para você definir uma nova senha.

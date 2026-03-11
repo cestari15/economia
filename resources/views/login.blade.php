@@ -7,7 +7,8 @@
     <title>Login - CRONOS</title>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
 
     <style>
@@ -120,7 +121,7 @@
             box-shadow: 0 0 0 4px rgba(0, 21, 41, 0.1);
         }
 
-        .form-control:focus + i {
+        .form-control:focus+i {
             opacity: 1;
         }
 
@@ -201,8 +202,15 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
@@ -222,7 +230,8 @@
                     <label class="form-label">E-mail</label>
                     <div class="input-wrapper">
                         <i class="fas fa-envelope"></i>
-                        <input type="email" id="email" name="email" class="form-control" placeholder="seu@email.com" required>
+                        <input type="email" id="email" name="email" class="form-control"
+                            placeholder="seu@email.com" required>
                     </div>
                 </div>
 
@@ -230,7 +239,8 @@
                     <label class="form-label">Senha</label>
                     <div class="input-wrapper">
                         <i class="fas fa-lock"></i>
-                        <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required>
+                        <input type="password" id="password" name="password" class="form-control"
+                            placeholder="••••••••" required>
                     </div>
                 </div>
 
@@ -260,43 +270,49 @@
 
                 const btn = $('#btn-submit');
                 const originalText = btn.html();
-                
+
                 let dados = {
                     email: $('#email').val(),
                     password: $('#password').val()
                 };
 
-                btn.html('<i class="fas fa-circle-notch fa-spin"></i> Validando Ciclo...').prop('disabled', true);
+                btn.html('<i class="fas fa-circle-notch fa-spin"></i> Validando Ciclo...').prop('disabled',
+                    true);
 
                 $.ajax({
-                    url: '{{ url("api/login") }}',
+                    url: '{{ url('api/login') }}',
                     type: 'POST',
                     data: JSON.stringify(dados),
                     contentType: 'application/json',
                     success: function(response) {
-                        if(response.status) {
-                            localStorage.setItem('token', response.token);
-                            localStorage.setItem('user', JSON.stringify(response.user));
+                        if (response.status) {
+                            const lembreSe = $('#remember').is(':checked');
+
+                            // Define a expiração: 30 dias se marcado, 1 hora se não
+                            const now = new Date();
+                            const expirationTime = lembreSe ?
+                                now.getTime() + (30 * 24 * 60 * 60 * 1000) :
+                                now.getTime() + (60 * 60 * 1000);
+
+                            // Salva os dados com o tempo de expiração
+                            const authData = {
+                                token: response.token,
+                                user: response.user,
+                                expiry: expirationTime
+                            };
+
+                            localStorage.setItem('auth_data', JSON.stringify(authData));
 
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Conectado',
-                                text: 'Seu fluxo financeiro está pronto.',
-                                showConfirmButton: false,
                                 timer: 1500,
-                                confirmButtonColor: '#001529'
+                                showConfirmButton: false
                             }).then(() => {
-                                window.location.href = '{{ route("relatorios") }}';
-                            });
-                        } else {
-                            btn.html(originalText).prop('disabled', false);
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Acesso Negado',
-                                text: response.message || 'Credenciais inválidas.',
-                                confirmButtonColor: '#001529'
+                                window.location.href = '{{ route('relatorios') }}';
                             });
                         }
+                        // ... restante do código
                     },
                     error: function(err) {
                         btn.html(originalText).prop('disabled', false);
@@ -312,4 +328,5 @@
         });
     </script>
 </body>
+
 </html>

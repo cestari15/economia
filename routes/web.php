@@ -35,7 +35,10 @@ Route::get('/servicos', function () {
 
 
 
-
+// routes/web.php
+Route::get('/clientes', function () {
+    return view('listagemClientes'); 
+});
 
 
 // RECUPERAR SENHA

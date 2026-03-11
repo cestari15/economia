@@ -14,6 +14,7 @@ class Calendario extends Model
         'cliente_id',
         'title',
         'data_evento',
+        'recorrente',
         'dias_lembrete'
     ];
 

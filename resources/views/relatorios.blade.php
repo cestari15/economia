@@ -209,6 +209,9 @@
             <a href="/relatorios" class="menu-item active"><i class="fas fa-chart-pie"></i> Relatórios</a>
             <a href="/calendario" class="menu-item"><i class="fas fa-calendar-alt"></i> Calendário</a>
             <a href="/anotacoes" class="menu-item "><i class="fas fa-edit"></i> Anotações</a>
+            <a href="/clientes" class="menu-item" id="menu-admin" style="display: none;">
+                <i class="fas fa-users-cog"></i> Clientes
+            </a>
             <a href="/configuracoes" class="menu-item"><i class="fas fa-user"></i> Configurações</a>
         </div>
     </div>
@@ -288,166 +291,117 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            const token = localStorage.getItem('token');
-            const userData = JSON.parse(localStorage.getItem('user') || '{}');
+   <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        // --- 1. VALIDAÇÃO DE SESSÃO E SEGURANÇA ---
+        const authData = JSON.parse(localStorage.getItem('auth_data'));
+        const nowTime = new Date().getTime();
 
-            if (!token) {
-                window.location.href = '/login';
-                return;
-            }
-            if (userData.nome) document.getElementById('user-display-name').innerText = userData.nome;
+        if (!authData || nowTime > authData.expiry) {
+            localStorage.removeItem('auth_data');
+            window.location.href = '/login';
+            return;
+        }
 
-            async function safeFetch(url) {
-                try {
-                    const res = await fetch(url, {
-                        headers: {
-                            'Authorization': 'Bearer ' + token
-                        }
-                    });
-                    return await res.json();
-                } catch (e) {
-                    return {
-                        status: false
-                    };
-                }
-            }
+        const token = authData.token;
+        const user = authData.user;
+        const ano = new Date().getFullYear();
 
-            const chartConfig = {
-                theme: {
-                    mode: 'dark'
-                },
-                chart: {
-                    background: 'transparent',
-                    toolbar: {
-                        show: false
-                    }
-                },
-                colors: ['#2563eb', '#10b981', '#f59e0b', '#ef4444']
-            };
-            const now = new Date();
-            const ano = now.getFullYear();
+        if (user && user.nome) {
+            document.getElementById('user-display-name').innerText = user.nome;
+        }
 
-            async function atualizarSaldoTotal() {
-                const data = await safeFetch('/api/relatorios/total-geral');
-                const displayElement = document.getElementById('total-geral');
+        // --- 2. CONFIGURAÇÕES GERAIS ---
+        const chartConfig = {
+            theme: { mode: 'dark' },
+            chart: { background: 'transparent', toolbar: { show: false } },
+            colors: ['#2563eb', '#10b981', '#f59e0b', '#ef4444']
+        };
 
-                if (data && data.total_geral !== undefined) {
-                    // Converte para número, trata NaN e formata como moeda BRL
-                    const valor = parseFloat(data.total_geral);
-                    displayElement.innerText = (!isNaN(valor) ? valor : 0).toLocaleString('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL'
-                    });
-                } else {
-                    displayElement.innerText = "R$ 0,00";
-                }
-            }
-            atualizarSaldoTotal();
+        async function safeFetch(url) {
+            try {
+                const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
+                return await res.json();
+            } catch (e) { return { status: false }; }
+        }
 
-            // 1. GERAL (Donut)
-            const dataCat = await safeFetch('/api/relatorios/por-categoria');
-            if (dataCat.status) {
-                new ApexCharts(document.querySelector("#chart-categoria"), {
-                    ...chartConfig,
-                    chart: {
-                        type: 'donut',
-                        height: 300
-                    },
-                    series: dataCat.totais_por_categoria.map(c => Number(c.total)),
-                    labels: dataCat.totais_por_categoria.map(c => c.categoria)
-                }).render();
-            }
+        // --- 3. CARREGAMENTO DE DADOS ---
 
-            // 2. RESUMO MENSAL (Bar) - Agora Dinâmico
-            let chartMes = new ApexCharts(document.querySelector("#chart-mes"), {
+        // Saldo Total
+        const dataTotal = await safeFetch('/api/relatorios/total-geral');
+        const displayElement = document.getElementById('total-geral');
+        const valor = parseFloat(dataTotal?.total_geral || 0);
+        displayElement.innerText = valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        // Gráfico Categoria Geral
+        const dataCat = await safeFetch('/api/relatorios/por-categoria');
+        if (dataCat.status) {
+            new ApexCharts(document.querySelector("#chart-categoria"), {
                 ...chartConfig,
-                chart: {
-                    type: 'bar',
-                    height: 300
-                },
-                series: [{
-                    name: 'Total',
-                    data: []
-                }],
-                xaxis: {
-                    categories: []
-                }
-            });
-            chartMes.render();
+                chart: { type: 'donut', height: 300 },
+                series: dataCat.totais_por_categoria.map(c => Number(c.total)),
+                labels: dataCat.totais_por_categoria.map(c => c.categoria)
+            }).render();
+        }
 
-            async function updateResumoMes(mes) {
-                const data = await safeFetch(`/api/relatorios/por-mes/${ano}/${mes}`);
-                if (data.status) {
-                    chartMes.updateOptions({
-                        xaxis: {
-                            categories: [`${mes}/${ano}`]
-                        }
-                    });
-                    chartMes.updateSeries([{
-                        name: 'Total',
-                        data: [Number(data.total)]
-                    }]);
-                }
-            }
-
-            const selectResumo = document.getElementById('mes-select');
-            selectResumo.addEventListener('change', (e) => updateResumoMes(e.target.value));
-            updateResumoMes(selectResumo.value); // Carrega inicial
-
-            // 3. CATEGORIA MENSAL (Donut)
-            let chartCatMensal = new ApexCharts(document.querySelector("#chart-categoria-mensal"), {
-                ...chartConfig,
-                chart: {
-                    type: 'donut',
-                    height: 300
-                },
-                series: [],
-                labels: []
-            });
-            chartCatMensal.render();
-
-            async function updateCatMensal(mes) {
-                const data = await safeFetch(`/api/relatorios/categoria-por-mes/${ano}/${mes}`);
-                if (data.status) {
-                    chartCatMensal.updateOptions({
-                        labels: data.totais.map(i => i.categoria)
-                    });
-                    chartCatMensal.updateSeries(data.totais.map(i => Number(i.total)));
-                }
-            }
-
-            const selectCat = document.getElementById('select-mes');
-            selectCat.addEventListener('change', (e) => updateCatMensal(e.target.value));
-            updateCatMensal(selectCat.value); // Carrega inicial
-
-            // 4. ANUAL (Line)
-            const dataAnual = await safeFetch(`/api/relatorios/anual/${ano}`);
-            if (dataAnual.status) {
-                new ApexCharts(document.querySelector("#chart-anual"), {
-                    ...chartConfig,
-                    chart: {
-                        type: 'line',
-                        height: 300
-                    },
-                    series: [{
-                        name: 'Gastos',
-                        data: dataAnual.meses.map(m => Number(m.total))
-                    }],
-                    xaxis: {
-                        categories: dataAnual.meses.map(m => m.mes)
-                    }
-                }).render();
-            }
-
-            // Logout
-            document.getElementById('btn-logout').addEventListener('click', () => {
-                localStorage.clear();
-                window.location.href = '/login';
-            });
+        // Gráfico Resumo Mensal (Bar)
+        let chartMes = new ApexCharts(document.querySelector("#chart-mes"), {
+            ...chartConfig,
+            chart: { type: 'bar', height: 300 },
+            series: [{ name: 'Total', data: [] }],
+            xaxis: { categories: [] }
         });
-    </script>
+        chartMes.render();
+
+        async function updateResumoMes(mes) {
+            const data = await safeFetch(`/api/relatorios/por-mes/${ano}/${mes}`);
+            if (data.status) {
+                chartMes.updateOptions({ xaxis: { categories: [`${mes}/${ano}`] } });
+                chartMes.updateSeries([{ name: 'Total', data: [Number(data.total)] }]);
+            }
+        }
+
+        // Gráfico Categoria Mensal (Donut)
+        let chartCatMensal = new ApexCharts(document.querySelector("#chart-categoria-mensal"), {
+            ...chartConfig,
+            chart: { type: 'donut', height: 300 },
+            series: [], labels: []
+        });
+        chartCatMensal.render();
+
+        async function updateCatMensal(mes) {
+            const data = await safeFetch(`/api/relatorios/categoria-por-mes/${ano}/${mes}`);
+            if (data.status) {
+                chartCatMensal.updateOptions({ labels: data.totais.map(i => i.categoria) });
+                chartCatMensal.updateSeries(data.totais.map(i => Number(i.total)));
+            }
+        }
+
+        // Gráfico Anual (Line)
+        const dataAnual = await safeFetch(`/api/relatorios/anual/${ano}`);
+        if (dataAnual.status) {
+            new ApexCharts(document.querySelector("#chart-anual"), {
+                ...chartConfig,
+                chart: { type: 'line', height: 300 },
+                series: [{ name: 'Gastos', data: dataAnual.meses.map(m => Number(m.total)) }],
+                xaxis: { categories: dataAnual.meses.map(m => m.mes) }
+            }).render();
+        }
+
+        // --- 4. EVENTOS DE INTERAÇÃO ---
+        document.getElementById('mes-select')?.addEventListener('change', (e) => updateResumoMes(e.target.value));
+        document.getElementById('select-mes')?.addEventListener('change', (e) => updateCatMensal(e.target.value));
+        
+        // Inicializações iniciais
+        updateResumoMes(document.getElementById('mes-select')?.value);
+        updateCatMensal(document.getElementById('select-mes')?.value);
+
+        document.getElementById('btn-logout').addEventListener('click', () => {
+            localStorage.clear();
+            window.location.href = '/login';
+        });
+    });
+</script>
     <script src="{{ asset('js/theme.js') }}"></script>
 </body>
 

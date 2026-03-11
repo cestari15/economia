@@ -246,6 +246,9 @@
             <a href="/relatorios" class="menu-item"><i class="fas fa-chart-pie"></i> Relatórios</a>
             <a href="/calendario" class="menu-item"><i class="fas fa-calendar-alt"></i> Calendário</a>
             <a href="/anotacoes" class="menu-item"><i class="fas fa-edit"></i> Anotações</a>
+            <a href="/clientes" class="menu-item" id="menu-admin" style="display: none;">
+                <i class="fas fa-users-cog"></i> Clientes
+            </a>
             <a href="/configuracoes" class="menu-item active"><i class="fas fa-user"></i> Configurações</a>
         </div>
     </div>
@@ -361,117 +364,111 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <script>
-        $(document).ready(function() {
-            const token = localStorage.getItem('token');
-            const user = JSON.parse(localStorage.getItem('user'));
+   <script>
+    $(document).ready(function() {
+        // --- 1. VALIDAÇÃO DE SESSÃO E SEGURANÇA ---
+        const authData = JSON.parse(localStorage.getItem('auth_data'));
+        const now = new Date().getTime();
 
-            if (!token) {
-                window.location.href = '/login';
-                return;
+        if (!authData || now > authData.expiry) {
+            localStorage.removeItem('auth_data');
+            window.location.href = '/login';
+            return;
+        }
+
+        const token = authData.token;
+        const user = authData.user;
+
+        // --- 2. INICIALIZAÇÃO DA INTERFACE ---
+        if (user) {
+            $('#user-display-name').text(user.nome);
+            $('#perfil-nome').val(user.nome);
+            $('#perfil-email').val(user.email);
+            
+            // Controle do menu admin
+            if (user.tipo === 'admin') {
+                $('#menu-admin').show();
+            } else {
+                $('#menu-admin').remove();
             }
+        }
 
-            // Preencher dados iniciais
-            if (user) {
-                $('#user-display-name').text(user.nome);
-                $('#perfil-nome').val(user.nome);
-                $('#perfil-email').val(user.email);
-            }
+        // Buscar dados reais da conta
+        fetch('/api/cliente/dados', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(res => res.json())
+        .then(data => {
+            $('#conta-criada').text(data.criado_em);
+            $('#conta-login').text(data.ultimo_login);
+            const spanPlano = $('#plano-atual');
+            spanPlano.text(data.plano);
+            if (data.plano === 'PREMIUM') spanPlano.css('color', 'var(--azul-brilhante)');
+        });
 
-            // 1. Atualizar Perfil
-            $('#form-perfil').submit(function(e) {
-                e.preventDefault();
-                const data = {
+        // --- 3. AÇÕES DO FORMULÁRIO ---
+
+        // Atualizar Perfil
+        $('#form-perfil').submit(function(e) {
+            e.preventDefault();
+            fetch('/api/cliente', {
+                method: 'PUT',
+                headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
                     nome: $('#perfil-nome').val(),
                     email: $('#perfil-email').val(),
                     foto: $('#perfil-foto').val()
-                };
-
-                fetch('/api/cliente', {
-                        method: 'PUT',
-                        headers: {
-                            'Authorization': 'Bearer ' + token,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(data)
-                    })
-                    .then(res => res.ok ? Swal.fire('Sucesso', 'Perfil atualizado!', 'success') : Promise
-                        .reject())
-                    .catch(() => Swal.fire('Erro', 'Falha ao atualizar perfil.', 'error'));
-            });
-
-            // 2. Alterar Senha
-            $('#form-senha').submit(function(e) {
-                e.preventDefault();
-                if ($('#nova-senha').val() !== $('#confirma-senha').val()) {
-                    return Swal.fire('Erro', 'As senhas não coincidem.', 'error');
-                }
-
-                fetch('/api/cliente/senha', {
-                        method: 'PUT',
-                        headers: {
-                            'Authorization': 'Bearer ' + token,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            senha_atual: $('#senha-atual').val(),
-                            nova_senha: $('#nova-senha').val()
-                        })
-                    })
-                    .then(res => res.ok ? Swal.fire('Sucesso', 'Senha alterada!', 'success') : Promise
-                        .reject())
-                    .catch(() => Swal.fire('Erro', 'Senha atual incorreta.', 'error'));
-            });
-
-            // 3. Excluir Conta
-            $('#btn-deletar-conta').click(function() {
-                Swal.fire({
-                    title: 'Tem certeza?',
-                    text: "Esta ação é irreversível e apagará todos os seus dados!",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#ef4444',
-                    cancelButtonColor: '#64748b',
-                    confirmButtonText: 'Sim, excluir tudo!',
-                    background: '#001529',
-                    color: '#fff'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        fetch('/api/cliente', {
-                                method: 'DELETE',
-                                headers: {
-                                    'Authorization': 'Bearer ' + token
-                                }
-                            })
-                            .then(res => {
-                                if (res.ok) {
-                                    localStorage.clear();
-                                    window.location.href = '/login';
-                                }
-                            });
-                    }
-                });
-            });
-
-            // Buscar dados reais da conta
-            fetch('/api/cliente/dados', {
-                    headers: {
-                        'Authorization': 'Bearer ' + token // Usando o token que você já tem
-                    }
                 })
-                .then(res => res.json())
-                .then(data => {
-                    $('#conta-criada').text(data.criado_em);
-                    $('#conta-login').text(data.ultimo_login);
-                    // Se quiser mudar a cor do plano dinamicamente:
-                    const spanPlano = $('#plano-atual');
-                    spanPlano.text(data.plano);
-                    if (data.plano === 'PREMIUM') {
-                        spanPlano.css('color', 'var(--azul-brilhante)');
-                    }
-                });
+            })
+            .then(res => res.ok ? Swal.fire('Sucesso', 'Perfil atualizado!', 'success') : Promise.reject())
+            .catch(() => Swal.fire('Erro', 'Falha ao atualizar perfil.', 'error'));
         });
-    </script>
+
+        // Alterar Senha
+        $('#form-senha').submit(function(e) {
+            e.preventDefault();
+            if ($('#nova-senha').val() !== $('#confirma-senha').val()) {
+                return Swal.fire('Erro', 'As senhas não coincidem.', 'error');
+            }
+
+            fetch('/api/cliente/senha', {
+                method: 'PUT',
+                headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    senha_atual: $('#senha-atual').val(),
+                    nova_senha: $('#nova-senha').val()
+                })
+            })
+            .then(res => res.ok ? Swal.fire('Sucesso', 'Senha alterada!', 'success') : Promise.reject())
+            .catch(() => Swal.fire('Erro', 'Senha atual incorreta.', 'error'));
+        });
+
+        // Excluir Conta
+        $('#btn-deletar-conta').click(function() {
+            Swal.fire({
+                title: 'Tem certeza?',
+                text: "Esta ação é irreversível!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'Sim, excluir tudo!',
+                background: '#001529', color: '#fff'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch('/api/cliente', {
+                        method: 'DELETE',
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    }).then(res => {
+                        if (res.ok) {
+                            localStorage.clear();
+                            window.location.href = '/login';
+                        }
+                    });
+                }
+            });
+        });
+    });
+</script>
     <script src="{{ asset('js/theme.js') }}"></script>
 </body>
 

@@ -7,7 +7,8 @@
     <title>Nova Senha - ECONOMIZZ</title>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
 
     <style>
@@ -124,114 +125,124 @@
 
 <body>
 
-<div class="auth-container">
-    <div class="auth-card">
-        <a href="/" class="logo-text">ECONO<span>MIZZ</span></a>
-        <div class="auth-title">Definir Nova Senha</div>
+    <div class="auth-container">
+        <div class="auth-card">
+            <a href="/" class="logo-text">CRO<span>NOS</span></a>
+            <div class="auth-title">Definir Nova Senha</div>
 
-        <form id="novaSenhaForm">
-            @csrf
-            <input type="hidden" name="token" value="{{ $token }}">
+            <form id="novaSenhaForm">
+                @csrf
+                <input type="hidden" name="token" value="{{ $token }}">
 
-            <div class="form-group">
-                <label class="form-label">E-mail</label>
-                <div class="input-wrapper">
-                    <i class="fas fa-envelope"></i>
-                    <input type="email" name="email" class="form-control" placeholder="Seu e-mail" required>
+                <div class="form-group">
+                    <label class="form-label">E-mail</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" name="email" class="form-control" placeholder="Seu e-mail" required>
+                    </div>
                 </div>
-            </div>
 
-            <div class="form-group">
-                <label class="form-label">Nova Senha</label>
-                <div class="input-wrapper">
-                    <i class="fas fa-lock"></i>
-                    <input type="password" name="password" class="form-control" placeholder="Digite a nova senha" required>
+                <div class="form-group">
+                    <label class="form-label">Nova Senha</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" name="password" id="password" class="form-control"
+                            placeholder="Digite a nova senha" required>
+                        <i class="fas fa-eye toggle-password" style="left: auto; right: 15px; cursor: pointer;"></i>
+                    </div>
                 </div>
-            </div>
 
-            <div class="form-group">
-                <label class="form-label">Confirmar Senha</label>
-                <div class="input-wrapper">
-                    <i class="fas fa-shield-alt"></i>
-                    <input type="password" name="password_confirmation" class="form-control" placeholder="Confirme a senha" required>
+                <div class="form-group">
+                    <label class="form-label">Confirmar Senha</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-shield-alt"></i>
+                        <input type="password" name="password_confirmation" id="password_confirmation"
+                            class="form-control" placeholder="Confirme a senha" required>
+                        <i class="fas fa-eye toggle-password" style="left: auto; right: 15px; cursor: pointer;"></i>
+                    </div>
                 </div>
-            </div>
 
-            <button type="submit" class="btn-send" id="btn-submit">
-                Redefinir Senha
-            </button>
-        </form>
+                <button type="submit" class="btn-send" id="btn-submit">
+                    Redefinir Senha
+                </button>
+            </form>
+        </div>
     </div>
-</div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<script>
-$(document).ready(function () {
+    <script>
+        $(document).ready(function() {
+            // 1. Configuração de segurança CSRF (Obrigatório para Laravel)
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
+            });
 
-    $('#novaSenhaForm').submit(function (e) {
-        e.preventDefault();
+            // 2. Mostrar/Ocultar senha
+            $('.toggle-password').click(function() {
+                const input = $(this).siblings('input');
+                const type = input.attr('type') === 'password' ? 'text' : 'password';
+                input.attr('type', type);
+                $(this).toggleClass('fa-eye fa-eye-slash');
+            });
 
-        const btn = $('#btn-submit');
-        const originalText = btn.html();
+            // 3. Envio do Formulário
+            $('#novaSenhaForm').submit(function(e) {
+                e.preventDefault();
 
-        btn.html('<i class="fas fa-circle-notch fa-spin"></i> Processando...').prop('disabled', true);
-
-        $.ajax({
-            url: "{{ route('nova-senha') }}",
-            type: "POST",
-            data: $(this).serialize(),
-            success: function (response) {
-
-                btn.html(originalText).prop('disabled', false);
-
-                if (response.status) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Senha redefinida!',
-                        text: response.message,
-                        confirmButtonColor: '#2563eb'
-                    }).then(() => {
-                        window.location.href = "{{ route('login') }}";
-                    });
-                } else {
+                // Validação de senhas iguais
+                if ($('#password').val() !== $('#password_confirmation').val()) {
                     Swal.fire({
                         icon: 'error',
-                        title: 'Erro',
-                        text: response.message
+                        title: 'Atenção',
+                        text: 'As senhas não coincidem!'
                     });
+                    return;
                 }
-            },
-            error: function (err) {
 
-                btn.html(originalText).prop('disabled', false);
+                const btn = $('#btn-submit');
+                const originalText = btn.html();
+                btn.html('<i class="fas fa-circle-notch fa-spin"></i> Processando...').prop('disabled',
+                    true);
 
-                if (err.responseJSON?.errors) {
-                    let mensagens = '';
-                    for (const key in err.responseJSON.errors) {
-                        mensagens += err.responseJSON.errors[key][0] + '<br>';
+                $.ajax({
+                    url: "{{ route('nova-senha') }}",
+                    type: "POST",
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        btn.html(originalText).prop('disabled', false);
+                        if (response.status) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Senha redefinida!',
+                                text: response.message,
+                                confirmButtonColor: '#2563eb'
+                            }).then(() => window.location.href = "{{ route('login') }}");
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Erro',
+                                text: response.message
+                            });
+                        }
+                    },
+                    error: function(err) {
+                        btn.html(originalText).prop('disabled', false);
+                        let msg = err.responseJSON?.message || 'Erro no servidor.';
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erro',
+                            html: msg
+                        });
                     }
-
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Validação',
-                        html: mensagens
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Erro',
-                        text: 'Erro no servidor. Tente novamente.'
-                    });
-                }
-            }
+                });
+            });
         });
-
-    });
-
-});
-</script>
+    </script>
 
 </body>
+
 </html>
