@@ -1,61 +1,73 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+Aqui está o código pronto para você copiar e colar no seu arquivo README.md do projeto CRONOS. Substituí as referências ao Laravel pelo seu sistema para que fique personalizado e profissional:
 
+Markdown
 <p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+    <h1 align="center">CRONOS</h1>
+    <p align="center">Sistema de Gestão de Clientes Inteligente e Seguro</p>
 </p>
 
-## About Laravel
+<p align="center">
+<a href="#"><img src="https://img.shields.io/badge/PHP-8.2-blue.svg" alt="PHP Version"></a>
+<a href="#"><img src="https://img.shields.io/badge/Laravel-10.x-red.svg" alt="Laravel Version"></a>
+<a href="#"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
+</p>
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Sobre o CRONOS
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+O **CRONOS** é uma plataforma robusta desenvolvida para simplificar a gestão de clientes, oferecendo um fluxo de autenticação seguro, interface moderna e performance otimizada. Focado na experiência do usuário (UX), o sistema utiliza tecnologias de ponta para garantir que a gestão de dados seja uma tarefa simples e eficiente.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Principais Funcionalidades
 
-## Learning Laravel
+- **Autenticação Segura:** Login, registro e gerenciamento de sessões.
+- **Recuperação de Senha:** Fluxo completo com validação de tokens e envio de e-mail automatizado.
+- **Design Responsivo:** Interface construída com *Plus Jakarta Sans* para uma experiência visual premium.
+- **Feedback em Tempo Real:** Integração com SweetAlert2 para notificações elegantes.
+- **Segurança:** Proteção contra ataques CSRF e validação de dados em nível de servidor e cliente.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## 🛠 Tecnologias
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+- **Framework:** [Laravel](https://laravel.com/)
+- **Linguagem:** PHP 8.2+
+- **Banco de Dados:** MySQL
+- **Interface:** HTML5, CSS3, JavaScript (jQuery)
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+## 🚀 Como Instalar
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+1. **Clone o repositório:**
+   ```bash
+   git clone [https://github.com/seu-usuario/cronos.git](https://github.com/seu-usuario/cronos.git)
+   cd cronos
+Instale as dependências:
 
-### Premium Partners
+Bash
+composer install
+Configure o ambiente:
+Copie o .env.example para .env e configure seu banco de dados e credenciais de e-mail (SMTP):
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Bash
+cp .env.example .env
+Gere a chave da aplicação:
 
-## Contributing
+Bash
+php artisan key:generate
+Inicie o servidor:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Bash
+php artisan serve
+🔐 Configuração de E-mail
+Para que o módulo de recuperação de senha funcione corretamente, configure as credenciais SMTP no seu arquivo .env:
 
-## Code of Conduct
+Snippet de código
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=465
+MAIL_USERNAME=seu-email@gmail.com
+MAIL_PASSWORD=sua-senha-de-app
+MAIL_ENCRYPTION=ssl
+🤝 Contribuições
+Contribuições são o que tornam a comunidade open-source incrível. Sinta-se à vontade para abrir Issues ou enviar Pull Requests.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+📜 Licença
+O CRONOS é um software de código aberto licenciado sob a MIT license.
