@@ -1,6 +1,5 @@
-Aqui está o código pronto para você copiar e colar no seu arquivo README.md do projeto CRONOS. Substituí as referências ao Laravel pelo seu sistema para que fique personalizado e profissional:
 
-Markdown
+
 <p align="center">
     <h1 align="center">CRONOS</h1>
     <p align="center">Sistema de Gestão de Clientes Inteligente e Seguro</p>
