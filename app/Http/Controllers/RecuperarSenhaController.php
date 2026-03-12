@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use App\Models\Cliente;
@@ -26,30 +25,47 @@ class RecuperarSenhaController extends Controller
     // ================================
     public function enviar(Request $request)
     {
+        // Validação básica do campo
         $request->validate(['email' => 'required|email']);
+        
+        // Busca o cliente na tabela 'clientes'
         $user = Cliente::where('email', $request->email)->first();
 
+        // Se o usuário não existir, retornamos sucesso por segurança (evita descoberta de e-mails)
         if (!$user) {
-            return response()->json(['status' => true, 'message' => 'Se este e-mail estiver cadastrado, você receberá um link de redefinição em breve.']);
+            return response()->json([
+                'status' => true, 
+                'message' => 'Se este e-mail estiver cadastrado, você receberá um link de redefinição em breve.'
+            ]);
         }
 
+        // Gera um token aleatório de 64 caracteres
         $token = Str::random(64);
+        
+        // Monta o link que será enviado dentro do botão no HTML
         $link = url('/nova-senha/' . $token . '?email=' . urlencode($request->email));
 
-        // TESTE DE FORÇAR ENVIO E PEGAR O ERRO
         try {
-            \Log::info('Tentando disparar Mail::send para ' . $request->email);
-
-            Mail::raw("Link de recuperação: $link", function ($message) use ($request) {
+            // O caminho 'emails.reset-senha' aponta para: 
+            // resources/views/emails/reset-senha.blade.php
+            Mail::send('emails.reset-senha', ['link' => $link], function ($message) use ($request) {
                 $message->to($request->email)
-                    ->subject('Teste de Envio CRONOS');
+                        ->subject('Redefinição de Senha - CRONOS');
             });
 
-            \Log::info('Mail::raw executado com sucesso.');
-            return response()->json(['status' => true, 'message' => 'E-mail enviado!']);
+            return response()->json([
+                'status' => true, 
+                'message' => 'E-mail enviado com sucesso! Verifique sua caixa de entrada.'
+            ]);
+
         } catch (\Exception $e) {
-            \Log::error('ERRO CRÍTICO NO ENVIO: ' . $e->getMessage());
-            return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+            // Caso ocorra erro no SMTP ou credenciais, salva no log do Laravel
+            \Log::error('ERRO NO ENVIO DE E-MAIL: ' . $e->getMessage());
+            
+            return response()->json([
+                'status' => false, 
+                'message' => 'Erro ao enviar e-mail. Verifique suas configurações de SMTP.'
+            ], 500);
         }
     }
 
@@ -65,27 +81,31 @@ class RecuperarSenhaController extends Controller
     }
 
     // ================================
-    // 4️⃣ Resetar senha
+    // 4️⃣ Resetar senha final
     // ================================
     public function resetarSenha(Request $request)
     {
+        // Valida se a senha tem no mínimo 6 dígitos e se os dois campos são iguais (confirmed)
         $request->validate([
             'token' => 'required',
-            'email' => 'required|email', // Remova o 'exists:users,email' se a tabela não for 'users'
+            'email' => 'required|email',
             'password' => 'required|min:6|confirmed'
         ]);
 
-        // Busca na tabela correta
-        $user = \App\Models\Cliente::where('email', $request->email)->first();
+        // Busca o cliente novamente para aplicar a nova senha
+        $user = Cliente::where('email', $request->email)->first();
 
         if (!$user) {
             return response()->json(['status' => false, 'message' => 'Usuário não encontrado.']);
         }
 
-        // ... restante da lógica de validar o token e salvar a nova senha
+        // Encripta a nova senha e salva no banco
         $user->password = Hash::make($request->password);
         $user->save();
 
-        return response()->json(['status' => true, 'message' => 'Senha redefinida com sucesso.']);
+        return response()->json([
+            'status' => true, 
+            'message' => 'Senha redefinida com sucesso! Você já pode fazer login.'
+        ]);
     }
 }
