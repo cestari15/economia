@@ -9,7 +9,7 @@ use Carbon\Carbon;
 
 class EnviarLembretesEmail extends Command
 {
-    // O nome do comando que será usado no cron
+    // O nome do comando que será usado no cronos
     protected $signature = 'lembretes:enviar';
     protected $description = 'Verifica e envia e-mails de lembrete baseados no dia configurado';
 
